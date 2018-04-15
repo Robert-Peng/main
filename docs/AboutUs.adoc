@@ -11,12 +11,12 @@ The development of the Medeina application is our project for CS2103T Software E
 
 == Project Team
 
-=== Jacqueline Cheong
+=== Cheong Jie Ning Jacqueline
 image::aquarinte.png[width="150", align="left"]
 {empty}[http://github.com/aquarinte[github]] [<<Jacqueline Cheong#, portfolio>>]
 
 Role: Developer +
-Responsibilities: Logic component, managing documentation
+Responsibilities: Logic component, Documentation, Deliverables
 
 '''
 
@@ -25,16 +25,16 @@ image::lejing.jpg[width="150", align="left"]
 {empty}[https://github.com/chialejing[github]] [<<Chia Le Jing#, portfolio>>]
 
 Role: Developer +
-Responsibilities: Storage component, managing documentation
+Responsibilities: Storage component, Documentation, Deliverables
 
 '''
 
-=== Wynona Kaan
+=== Wynona Kaan Syn Yarn
 image::wynonaK.png[width="150", align="left"]
 {empty}[https://github.com/wynonaK[github]] [<<Wynona Kaan#, portfolio>>]
 
 Role: Developer +
-Responsibilities: Model component
+Responsibilities: Model component, Deliverables
 
 '''
 
@@ -43,6 +43,6 @@ image::Robert_Peng.jpg[width="150", align="left"]
 {empty}[http://github.com/Robert-Peng[github]] [<<Peng Xuan Chang#, portfolio>>]
 
 Role: Developer +
-Responsibilities: UI Component
+Responsibilities: UI Component, Deliverables
 
 '''

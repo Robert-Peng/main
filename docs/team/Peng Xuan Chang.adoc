@@ -37,6 +37,9 @@ This application was built upon an existing code base for an address book for th
 ** Enhancements to existing features:
 *** Created tabs for both OwnerList and PetPatientList  (Pull request https://github.com/CS2103JAN2018-F14-B2/main/pull/196[#196])
 *** Improve *List* command to list out both owners and petPatients (Pull request https://github.com/CS2103JAN2018-F14-B2/main/pull/143[#143])
+*** Assign different colors to different tags (Pull request https://github.com/CS2103JAN2018-F14-B2/main/pull/14[#14])
+*** Implemented calendar switch view command which was integrated later into `listappt` command (Pull request https://github.com/CS2103JAN2018-F14-B2/main/pull/179[#179])
+*** Create tab for both contact list and pet patient list (Pull request https://github.com/CS2103JAN2018-F14-B2/main/pull/196[#196])
 ** Documentation:
 *** Adding prefaces and changing language in the User Guide (Pull request https://github.com/CS2103JAN2018-F14-B2/main/pull/70[#70])
 *** Adding screenshot of command results in the User Guide (Pull request https://github.com/CS2103JAN2018-F14-B2/main/pull/151[#151])
@@ -51,9 +54,10 @@ This application was built upon an existing code base for an address book for th
 |_Given below are sections I contributed to the User Guide. They showcase my ability to write documentation targeting end-users._
 |===
 
+include::../UserGuide.adoc[tag=GUI]
+
 include::../UserGuide.adoc[tag=listcommand]
 
-include::../UserGuide.adoc[tag=undoredo]
 
 == Contributions to the Developer Guide
 
@@ -61,8 +65,12 @@ include::../UserGuide.adoc[tag=undoredo]
 |_Given below are sections I contributed to the Developer Guide. They showcase my ability to write technical documentation and the technical depth of my contributions to the project._
 |===
 
+include::../DeveloperGuide.adoc[tag=UIcomponent]
+
 include::../DeveloperGuide.adoc[tag=ListPets]
 
 include::../DeveloperGuide.adoc[tag=calendar]
+
+
 
 

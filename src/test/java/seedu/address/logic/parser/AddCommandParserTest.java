@@ -430,8 +430,8 @@ public class AddCommandParserTest {
 
     @Test
     public void parse_invalidAppointmentValue_failure() {
-        String invalidDateMsg = "Please give a valid date based on the format yyyy-MM-dd!";
-        String invalidDateTimeMsg = "Please ensure all fields are valid and follow the format of yyyy-MM-dd HH:mm!";
+        String invalidDateMsg = "Please give a valid date and time based on the format yyyy-MM-dd HH:mm!";
+        String invalidDateTimeMsg = "Please give a valid date and time based on the format yyyy-MM-dd HH:mm!";
 
         // invalid remark
         assertParseFailure(parser, OPTION_APPOINTMENT + DATE_DESC_ONE + INVALID_REMARK_DESC + TAG_DESC_CHECKUP

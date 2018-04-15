@@ -8,56 +8,51 @@
 
 == Overview
 
-Medeina is a desktop address book application used for teaching Software Engineering principles. The user interacts with it using a CLI, and it has a GUI created with JavaFX. It is written in Java, and has about 10 kLoC.
+Medeina is a desktop application designed for veterinarians and their assistants to manage contacts, pet patients and appointments. Users mainly interact with Medeina using a Command Line Interface. Medeina has a Graphical User Interface created with JavaFX. It is written in Java, and has about 20 kLoC.
 
 == Summary of contributions
 
 * *Major enhancement*: added *the ability to delete and force delete*
-** What it does: deletion can be done by including a option together with the index of what is to be deleted. Force deletion can be done for owner and pet patient options, where all relevant dependencies are also deleted together with the index of what needs to be deleted.
-** Justification: This feature improves the product significantly because a user can delete other information other than persons, like pet patients and appointments. In addition, the user does not need to go through the hassle of deleting every dependency (appointments, pet patients) before an owner can be deleted, but can just use the force option to immediately delete all dependencies.
-** Highlights: This enhancement changes the format of the delete command to `delete -OPTION INDEX`. Implementation for the force option was difficult as it required safe deletion of dependencies before an element that has dependencies can be deleted.
+** What it does: Can delete appointments, pet patients and contacts. Additionally, forcefully deleting pet patients and owners (and its dependencies).
+** Justification: Users can delete obsolete information. Users does not need to delete every dependency manually, but can just use the force option to immediately delete all dependencies.
+** Highlights: Implementation for the force option was difficult as it required safe deletion of dependencies before an element that has dependencies can be deleted.
 
 * *Major enhancement*: added *the ability find owners, pet patients and multiple prefixes of information*
-** What it does: find can be done by including an `OPTION` (accepted `-o` for owner, `-p` for pet patients) and added with any amount of supported `PREFIX` with any amount of keywords under each `PREFIX`.
-** Justification: This feature improves the product significantly because a user can find all important information, not only just by name, which was in the initial implementation of the find command. In addition, the user can find more specific information by adding on prefixes and more keywords. This is important especially for pet patients, when they need to find for specific pets for instance, a cat with blood type A that can be a blood donor to a dying patient.
-** Highlights: This enhancement changes the format of the find command to `delete -OPTION PREFIX/KEYWORDS [MORE_PREFIX/MORE_KEYWORDS]`. The find command can go as specific as `find -p n/NAME s/SPECIES b/BREED c/COLOUR bt/BLOOD_TYPE t/TAGS` to find as specific information as possible. This required understanding of the prior FindCommand which made heavy use of Java 8 Predicates.
+** What it does: Finding can be done by including an `OPTION` (accepted `-o` for owner, `-p` for pet patients) and added with any amount of supported `PREFIX` with any amount of keywords under each `PREFIX`.
+** Justification: This feature improves the product significantly because a user can find for vital information. In addition, the user can find more specific information by adding on prefixes and more keywords.
+** Highlights: The find command can be as specific as `find -p n/NAME s/SPECIES b/BREED c/COLOUR bt/BLOOD_TYPE t/TAGS` to find as specific information as possible. This required understanding of the prior FindCommand which made heavy use of Java 8 Predicates.
 
 * *Minor enhancement*: added the capability to store appointments in the .xml file.
 
 * *Minor enhancement*: added the capability list appointments of any date, in all 4 views allowed in CalendarFX.
 
-* *Code contributed*: [https://github.com/CS2103JAN2018-F14-B2/main/blob/master/collated/functional/wynonaK.md[Functional code]] [https://github.com/CS2103JAN2018-F14-B2/main/blob/master/collated/test/wynonaK.md[Test code]] _{give links to collated code files}_
+* *Code contributed*: [https://github.com/CS2103JAN2018-F14-B2/main/blob/master/collated/functional/wynonaK.md[Functional code]] [https://github.com/CS2103JAN2018-F14-B2/main/blob/master/collated/test/wynonaK.md[Test code]]
 
 * *Other contributions*:
 
 ** Project management:
-*** Managed releases `v1.4` (1 release) on GitHub
+*** Managed releases `v1.4` (1 release) on GitHub, Consistently contributed to achieve weekly milestone from `v1.1` - `v1.5rc`.
+** Documentation
+*** Improved user-friendliness in the User Guide by adding prefaces, Touched up on `v2.0` upcoming functions in the User Guide. (Pull request https://github.com/CS2103JAN2018-F14-B2/main/pull/79[#79])
+*** Updated the Developer Guide with new images to demonstrate the Model Component, as well as update obsolete information in Medeina. (Pull request https://github.com/CS2103JAN2018-F14-B2/main/pull/243[#243], Pull request https://github.com/CS2103JAN2018-F14-B2/main/pull/5[#5])
 ** Community:
-*** Reported bugs and suggestions for other teams in the class (examples: )
-
-_{you can add/remove categories in the list above}_
+*** Reported bugs and suggestions for other teams (Example: https://github.com/CS2103JAN2018-W15-B4/main/issues/202[#202])
 
 == Contributions to the User Guide
 
-
 |===
-|_Given below are sections I contributed to the User Guide. They showcase my ability to write documentation targeting end-users._
+|_Given below are some sections I contributed to the User Guide. They showcase my ability to write documentation targeting end-users._
 |===
 
 include::../UserGuide.adoc[tag=find]
 
-include::../UserGuide.adoc[tag=listappt]
-
-include::../UserGuide.adoc[tag=delete]
-
 == Contributions to the Developer Guide
 
 |===
-|_Given below are sections I contributed to the Developer Guide. They showcase my ability to write technical documentation and the technical depth of my contributions to the project._
+|_Given below are some sections I contributed to the Developer Guide. They showcase my ability to write technical documentation and the technical depth of my contributions to the project._
 |===
 
-== PROJECT: PowerPointLabs
+include::../DeveloperGuide.adoc[tag=listappt]
 
----
+include::../DeveloperGuide.adoc[tag=delete]
 
-_{Optionally, you may include other projects in your portfolio.}_

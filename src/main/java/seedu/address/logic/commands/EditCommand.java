@@ -181,7 +181,7 @@ public class EditCommand extends UndoableCommand {
                 break;
             case EDIT_APPOINTMENT:
                 checkForClashes();
-                checkForSameAppointmentTiming();
+                // checkForSameAppointmentTiming();
                 checkForConcurrentAppointments();
                 checkForPastAppointment();
                 model.updateAppointment(appointmentToEdit, editedAppointment);

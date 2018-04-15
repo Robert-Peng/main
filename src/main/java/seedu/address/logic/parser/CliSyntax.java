@@ -57,7 +57,6 @@ public class CliSyntax {
     public static final String OPTION_APPOINTMENT = "-a";
     public static final String OPTIONFORCE_OWNER = "-fo";
     public static final String OPTIONFORCE_PETPATIENT = "-fp";
-    public static final String OPTIONFORCE_APPOINTMENT = "-fa";
     public static final String OPTION_YEAR = "-y";
     public static final String OPTION_MONTH = "-m";
     public static final String OPTION_WEEK = "-w";
@@ -69,7 +68,6 @@ public class CliSyntax {
     public static final String OPTION_APPOINTMENT_DESC = OPTION_APPOINTMENT + "\t: appointment";
     public static final String OPTIONFORCE_OWNER_DESC = OPTIONFORCE_OWNER + "\t: force delete person/owner";
     public static final String OPTIONFORCE_PETPATIENT_DESC = OPTIONFORCE_PETPATIENT + "\t: force delete pet patient";
-    public static final String OPTIONFORCE_APPOINTMENT_DESC = OPTIONFORCE_APPOINTMENT + "\t: force delete appointment";
     public static final String OPTION_YEAR_DESC = OPTION_YEAR + "\t: calendar year view";
     public static final String OPTION_MONTH_DESC = OPTION_MONTH + "\t: calendar month view";
     public static final String OPTION_WEEK_DESC = OPTION_WEEK + "\t: calendar week view";
@@ -94,7 +92,7 @@ public class CliSyntax {
             HistoryCommand.COMMAND_WORD, ListAppointmentCommand.COMMAND_WORD).collect(Collectors.toSet());
 
     private static final Set<String> options = Stream.of(OPTION_OWNER_DESC, OPTION_PETPATIENT_DESC,
-            OPTION_APPOINTMENT_DESC, OPTIONFORCE_OWNER_DESC, OPTIONFORCE_PETPATIENT_DESC, OPTIONFORCE_APPOINTMENT_DESC,
+            OPTION_APPOINTMENT_DESC, OPTIONFORCE_OWNER_DESC, OPTIONFORCE_PETPATIENT_DESC,
             OPTION_YEAR_DESC, OPTION_MONTH_DESC, OPTION_WEEK_DESC, OPTION_DAY_DESC)
             .collect(Collectors.toSet());
 

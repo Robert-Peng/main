@@ -4,33 +4,63 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.ADDRESS_DESC_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.BLOODTYPE_DESC_JOKER;
+import static seedu.address.logic.commands.CommandTestUtil.BLOODTYPE_DESC_NERO;
+import static seedu.address.logic.commands.CommandTestUtil.BREED_DESC_JOKER;
+import static seedu.address.logic.commands.CommandTestUtil.BREED_DESC_NERO;
+import static seedu.address.logic.commands.CommandTestUtil.COLOUR_DESC_JOKER;
+import static seedu.address.logic.commands.CommandTestUtil.COLOUR_DESC_NERO;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.EMAIL_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_ADDRESS_DESC;
+import static seedu.address.logic.commands.CommandTestUtil.INVALID_BLOODTYPE_DESC;
+import static seedu.address.logic.commands.CommandTestUtil.INVALID_BREED_DESC;
+import static seedu.address.logic.commands.CommandTestUtil.INVALID_COLOUR_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_EMAIL_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_NAME_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_NRIC_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_PHONE_DESC;
+import static seedu.address.logic.commands.CommandTestUtil.INVALID_SPECIES_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.INVALID_TAG_DESC;
 import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_JOKER;
+import static seedu.address.logic.commands.CommandTestUtil.NAME_DESC_NERO;
 import static seedu.address.logic.commands.CommandTestUtil.NRIC_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.NRIC_DESC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.OPTION_OWNER;
+import static seedu.address.logic.commands.CommandTestUtil.OPTION_PET;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static seedu.address.logic.commands.CommandTestUtil.PHONE_DESC_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.SPECIES_DESC_JOKER;
+import static seedu.address.logic.commands.CommandTestUtil.SPECIES_DESC_NERO;
+import static seedu.address.logic.commands.CommandTestUtil.TAG_DESC_DEPRESSION;
 import static seedu.address.logic.commands.CommandTestUtil.TAG_DESC_FRIEND;
 import static seedu.address.logic.commands.CommandTestUtil.TAG_DESC_HUSBAND;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_ADDRESS_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_BLOODTYPE_JOKER;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_BLOODTYPE_NERO;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_BREED_JOKER;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_BREED_NERO;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_COLOUR_JOKER;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_COLOUR_NERO;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_EMAIL_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_NAME_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_NAME_JOKER;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_NAME_NERO;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_NRIC_BOB;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_PHONE_BOB;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_SPECIES_JOKER;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_SPECIES_NERO;
+import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_DEPRESSION;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_FRIEND;
 import static seedu.address.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_TAG;
+import static seedu.address.model.Model.PREDICATE_SHOW_ALL_APPOINTMENTS;
 import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
+import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PET_PATIENTS;
 import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
+import static seedu.address.testutil.TypicalIndexes.INDEX_FIRST_PETPATIENT;
 import static seedu.address.testutil.TypicalPersons.AMY;
 import static seedu.address.testutil.TypicalPersons.BOB;
 import static seedu.address.testutil.TypicalPersons.KEYWORD_MATCHING_MEIER;
@@ -39,6 +69,7 @@ import org.junit.Test;
 
 import seedu.address.commons.core.Messages;
 import seedu.address.commons.core.index.Index;
+import seedu.address.logic.commands.AddCommand;
 import seedu.address.logic.commands.EditCommand;
 import seedu.address.logic.commands.RedoCommand;
 import seedu.address.logic.commands.UndoCommand;
@@ -51,14 +82,24 @@ import seedu.address.model.person.Person;
 import seedu.address.model.person.Phone;
 import seedu.address.model.person.exceptions.DuplicatePersonException;
 import seedu.address.model.person.exceptions.PersonNotFoundException;
+import seedu.address.model.petpatient.BloodType;
+import seedu.address.model.petpatient.Breed;
+import seedu.address.model.petpatient.Colour;
+import seedu.address.model.petpatient.PetPatient;
+import seedu.address.model.petpatient.PetPatientName;
+import seedu.address.model.petpatient.Species;
+import seedu.address.model.petpatient.exceptions.DuplicatePetPatientException;
+import seedu.address.model.petpatient.exceptions.PetPatientNotFoundException;
 import seedu.address.model.tag.Tag;
 import seedu.address.testutil.PersonBuilder;
 import seedu.address.testutil.PersonUtil;
+import seedu.address.testutil.PetPatientBuilder;
+import seedu.address.testutil.PetPatientUtil;
+import seedu.address.testutil.TypicalPetPatients;
 
 public class EditCommandSystemTest extends AddressBookSystemTest {
-
     @Test
-    public void edit() throws Exception {
+    public void editPerson() throws Exception {
         Model model = getModel();
 
         /* ----------------- Performing edit operation while an unfiltered list is being shown ---------------------- */
@@ -168,39 +209,39 @@ public class EditCommandSystemTest extends AddressBookSystemTest {
 
         /* Case: missing all fields -> rejected */
         assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_OWNER + " "
-                + INDEX_FIRST_PERSON.getOneBased(),
+                        + INDEX_FIRST_PERSON.getOneBased(),
                 EditCommand.MESSAGE_NOT_EDITED);
 
         /* Case: invalid name -> rejected */
         assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_OWNER + " "
-                + INDEX_FIRST_PERSON.getOneBased() + INVALID_NAME_DESC,
+                        + INDEX_FIRST_PERSON.getOneBased() + INVALID_NAME_DESC,
                 Name.MESSAGE_NAME_CONSTRAINTS);
 
         /* Case: invalid phone -> rejected */
         assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_OWNER + " "
-                + INDEX_FIRST_PERSON.getOneBased() + INVALID_PHONE_DESC,
+                        + INDEX_FIRST_PERSON.getOneBased() + INVALID_PHONE_DESC,
                 Phone.MESSAGE_PHONE_CONSTRAINTS);
 
         /* Case: invalid email -> rejected */
         assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_OWNER + " "
-                + INDEX_FIRST_PERSON.getOneBased() + INVALID_EMAIL_DESC,
+                        + INDEX_FIRST_PERSON.getOneBased() + INVALID_EMAIL_DESC,
                 Email.MESSAGE_EMAIL_CONSTRAINTS);
 
         /* Case: invalid address -> rejected */
         assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_OWNER + " "
-                + INDEX_FIRST_PERSON.getOneBased() + INVALID_ADDRESS_DESC,
+                        + INDEX_FIRST_PERSON.getOneBased() + INVALID_ADDRESS_DESC,
                 Address.MESSAGE_ADDRESS_CONSTRAINTS);
 
         //@@author Robert-Peng
         /* Case: invalid nric -> rejected */
         assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_OWNER + " "
-                + INDEX_FIRST_PERSON.getOneBased() + INVALID_NRIC_DESC,
+                        + INDEX_FIRST_PERSON.getOneBased() + INVALID_NRIC_DESC,
                 Nric.MESSAGE_NRIC_CONSTRAINTS);
         //@@author
 
         /* Case: invalid tag -> rejected */
         assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_OWNER + " "
-                + INDEX_FIRST_PERSON.getOneBased() + INVALID_TAG_DESC,
+                        + INDEX_FIRST_PERSON.getOneBased() + INVALID_TAG_DESC,
                 Tag.MESSAGE_TAG_CONSTRAINTS);
 
         /* Case: edit a person with new values same as another person's values -> rejected */
@@ -219,6 +260,176 @@ public class EditCommandSystemTest extends AddressBookSystemTest {
                 + ADDRESS_DESC_BOB + NRIC_DESC_BOB + TAG_DESC_HUSBAND;
         assertCommandFailure(command, EditCommand.MESSAGE_DUPLICATE_PERSON);
     }
+
+    //@@author chialejing
+    @Test
+    public void editPetPatient() throws Exception {
+        Model model = getModel();
+
+        // Add Person BOB
+        String command = AddCommand.COMMAND_WORD + " " + OPTION_OWNER + TAG_DESC_FRIEND
+                + PHONE_DESC_BOB + ADDRESS_DESC_BOB
+                + NAME_DESC_BOB + NRIC_DESC_BOB + TAG_DESC_HUSBAND + EMAIL_DESC_BOB;
+        executeCommand(command);
+
+        // Add PetPatient NERO
+        command = AddCommand.COMMAND_WORD + "  " + OPTION_PET + "  " + NAME_DESC_NERO
+                + "  " + SPECIES_DESC_NERO + "  " + BREED_DESC_NERO + "  " + COLOUR_DESC_NERO + "  "
+                + BLOODTYPE_DESC_NERO + "  " + OPTION_OWNER + "  " + NRIC_DESC_BOB;
+        executeCommand(command);
+
+        /* ----------------- Performing edit operation while an unfiltered list is being shown ---------------------- */
+
+        /* Case: edit all fields, command with leading spaces, trailing spaces and multiple spaces between each field
+         * -> edited
+         *
+         */
+        Index index = INDEX_FIRST_PETPATIENT;
+        command = " " + EditCommand.COMMAND_WORD + "  "
+                + OPTION_PET + "  " + index.getOneBased() + "  " + NAME_DESC_NERO + "  "
+                + SPECIES_DESC_NERO + " " + BREED_DESC_NERO + "  " + COLOUR_DESC_NERO
+                + " " + BLOODTYPE_DESC_NERO + " " + NRIC_DESC_BOB;
+        PetPatient editedPetPatient = new PetPatientBuilder().withName(VALID_NAME_NERO)
+                .withSpecies(VALID_SPECIES_NERO).withBreed(VALID_BREED_NERO).withColour(VALID_COLOUR_NERO)
+                .withBloodType(VALID_BLOODTYPE_NERO).withOwnerNric(VALID_NRIC_BOB).withTags().build();
+        assertCommandSuccess(command, index, editedPetPatient);
+
+        /* Case: edit a petpatient with new values same as existing values -> edited */
+        command = EditCommand.COMMAND_WORD + OPTION_PET + " "
+                + index.getOneBased() + NAME_DESC_NERO + SPECIES_DESC_NERO + BREED_DESC_NERO
+                + COLOUR_DESC_NERO + BLOODTYPE_DESC_NERO + NRIC_DESC_BOB + " " + PREFIX_TAG.getPrefix();
+        assertCommandSuccess(command, index, TypicalPetPatients.NERO);
+
+        /* Case: edit some fields -> edited */
+        index = INDEX_FIRST_PETPATIENT;
+        command = EditCommand.COMMAND_WORD + OPTION_PET + " "
+                + index.getOneBased() + TAG_DESC_DEPRESSION;
+        PetPatient petPatientToEdit = getModel().getFilteredPetPatientList().get(index.getZeroBased());
+        editedPetPatient = new PetPatientBuilder(petPatientToEdit).withTags(VALID_TAG_DEPRESSION).build();
+        assertCommandSuccess(command, index, editedPetPatient);
+
+        /* Case: clear tags -> cleared */
+        index = INDEX_FIRST_PETPATIENT;
+        command = EditCommand.COMMAND_WORD + OPTION_PET + " "
+                + index.getOneBased() + " " + PREFIX_TAG.getPrefix();
+        editedPetPatient = new PetPatientBuilder(petPatientToEdit).withTags().build();
+        assertCommandSuccess(command, index, editedPetPatient);
+
+        /* --------------------------------- Performing invalid edit operation -------------------------------------- */
+
+        /* Case: invalid index (0) -> rejected */
+        assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_PET + " 0" + NAME_DESC_NERO,
+                String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
+
+        /* Case: invalid index (-1) -> rejected */
+        assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_PET + " -1" + NAME_DESC_NERO,
+                String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
+
+        /* Case: invalid index (size + 1) -> rejected */
+        int invalidIndex = getModel().getFilteredPersonList().size() + 1;
+
+        assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_PET + " " + invalidIndex + COLOUR_DESC_NERO,
+                Messages.MESSAGE_INVALID_PET_PATIENT_DISPLAYED_INDEX);
+
+        /* Case: missing index -> rejected */
+        assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_PET + NAME_DESC_NERO,
+                String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
+
+        /* Case: missing all fields -> rejected */
+        assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_PET + " "
+                        + INDEX_FIRST_PETPATIENT.getOneBased(),
+                EditCommand.MESSAGE_NOT_EDITED);
+
+        /* Case: invalid name -> rejected */
+        assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_PET + " "
+                        + INDEX_FIRST_PETPATIENT.getOneBased() + INVALID_NAME_DESC,
+                PetPatientName.MESSAGE_PET_NAME_CONSTRAINTS);
+
+        /* Case: invalid species -> rejected */
+        assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_PET + " "
+                        + INDEX_FIRST_PETPATIENT.getOneBased() + INVALID_SPECIES_DESC,
+                Species.MESSAGE_PET_SPECIES_CONSTRAINTS);
+
+        /* Case: invalid breed -> rejected */
+        assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_PET + " "
+                        + INDEX_FIRST_PETPATIENT.getOneBased() + INVALID_BREED_DESC,
+                Breed.MESSAGE_PET_BREED_CONSTRAINTS);
+
+        /* Case: invalid colour -> rejected */
+        assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_PET + " "
+                        + INDEX_FIRST_PETPATIENT.getOneBased() + INVALID_COLOUR_DESC,
+                Colour.MESSAGE_PET_COLOUR_CONSTRAINTS);
+
+        /* Case: invalid blood type -> rejected */
+        assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_PET + " "
+                        + INDEX_FIRST_PETPATIENT.getOneBased() + INVALID_BLOODTYPE_DESC,
+                BloodType.MESSAGE_PET_BLOODTYPE_CONSTRAINTS);
+
+        /* Case: invalid owner nric -> rejected */
+        assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_PET + " "
+                        + INDEX_FIRST_PETPATIENT.getOneBased() + INVALID_NRIC_DESC,
+                Nric.MESSAGE_NRIC_CONSTRAINTS);
+
+        /* Case: invalid tag -> rejected */
+        assertCommandFailure(EditCommand.COMMAND_WORD + OPTION_PET + " "
+                        + INDEX_FIRST_PETPATIENT.getOneBased() + INVALID_TAG_DESC,
+                Tag.MESSAGE_TAG_CONSTRAINTS);
+
+        /* Case: edit a petpatient with new values same as another petpatient's values -> rejected */
+        PetPatient joker = new PetPatientBuilder()
+                .withName(VALID_NAME_JOKER)
+                .withSpecies(VALID_SPECIES_JOKER)
+                .withBreed(VALID_BREED_JOKER)
+                .withColour(VALID_COLOUR_JOKER)
+                .withBloodType(VALID_BLOODTYPE_JOKER)
+                .withOwnerNric(VALID_NRIC_BOB)
+                .withTags(VALID_TAG_DEPRESSION).build();
+
+        executeCommand(PetPatientUtil.getAddCommand(joker, BOB.getNric()));
+        assertTrue(getModel().getAddressBook().getPetPatientList().contains(joker));
+        index = INDEX_FIRST_PETPATIENT;
+        assertFalse(getModel().getFilteredPetPatientList().get(index.getZeroBased()).equals(joker));
+        command = EditCommand.COMMAND_WORD + OPTION_PET + " " + index.getOneBased()
+                + NAME_DESC_JOKER + SPECIES_DESC_JOKER + BREED_DESC_JOKER
+                + COLOUR_DESC_JOKER + BLOODTYPE_DESC_JOKER + NRIC_DESC_BOB + TAG_DESC_DEPRESSION;
+        assertCommandFailure(command, EditCommand.MESSAGE_DUPLICATE_PET_PATIENT);
+    }
+
+    /**
+     * Performs the same verification as {@code assertCommandSuccess(String, Index, PetPatient, Index)} except that
+     * the browser url and selected card remain unchanged.
+     * @param toEdit the index of the current model's filtered list
+     * @see EditCommandSystemTest#assertCommandSuccess(String, Index, Person, Index)
+     */
+    private void assertCommandSuccess(String command, Index toEdit, PetPatient editedPetPatient) {
+        assertCommandSuccess(command, toEdit, editedPetPatient, null);
+    }
+
+    /**
+     * Performs the same verification as {@code assertCommandSuccess(String, Model, String, Index)} and in addition,<br>
+     * 1. Asserts that result display box displays the success message of executing {@code EditCommand}.<br>
+     * 2. Asserts that the model related components are updated to reflect the person at index {@code toEdit} being
+     * updated to values specified {@code editedPerson}.<br>
+     * @param toEdit the index of the current model's filtered list.
+     * @see EditCommandSystemTest#assertCommandSuccess(String, Model, String, Index)
+     */
+    private void assertCommandSuccess(String command, Index toEdit, PetPatient editedPetPatient,
+                                      Index expectedSelectedCardIndex) {
+        Model expectedModel = getModel();
+        try {
+            expectedModel.updatePetPatient(
+                    expectedModel.getFilteredPetPatientList().get(toEdit.getZeroBased()), editedPetPatient);
+            expectedModel.updateFilteredPetPatientList(PREDICATE_SHOW_ALL_PET_PATIENTS);
+        } catch (DuplicatePetPatientException | PetPatientNotFoundException e) {
+            throw new IllegalArgumentException(
+                    "editedPetPatient is a duplicate in expectedModel, or it isn't found in the model.");
+        }
+
+        assertCommandSuccess(command, expectedModel,
+                String.format(EditCommand.MESSAGE_EDIT_PET_PATIENT_SUCCESS, editedPetPatient),
+                expectedSelectedCardIndex);
+    }
+    //@@author
 
     /**
      * Performs the same verification as {@code assertCommandSuccess(String, Index, Person, Index)} except that
@@ -281,6 +492,8 @@ public class EditCommandSystemTest extends AddressBookSystemTest {
                                       Index expectedSelectedCardIndex) {
         executeCommand(command);
         expectedModel.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        expectedModel.updateFilteredPetPatientList(PREDICATE_SHOW_ALL_PET_PATIENTS);
+        expectedModel.updateFilteredAppointmentList(PREDICATE_SHOW_ALL_APPOINTMENTS);
         assertApplicationDisplaysExpected("", expectedResultMessage, expectedModel);
         assertCommandBoxShowsDefaultStyle();
         if (expectedSelectedCardIndex != null) {

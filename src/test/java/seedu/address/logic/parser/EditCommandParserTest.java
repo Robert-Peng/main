@@ -114,7 +114,7 @@ public class EditCommandParserTest {
             String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE);
 
     private static final String MESSAGE_INVALID_LOCAL_DATE_TIME =
-            "Please give a valid date based on the format yyyy-MM-dd!";
+            "Please give a valid date and time based on the format yyyy-MM-dd HH:mm!";
 
     private EditCommandParser parser = new EditCommandParser();
 

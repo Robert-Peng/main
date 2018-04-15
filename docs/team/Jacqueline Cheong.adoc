@@ -3,20 +3,19 @@
 :stylesDir: ../stylesheets
 
 == PROJECT: Medeina
-
----
+This portfolio page showcases my contributions to the Medeina Project.
 
 == Overview
 
-Medeina is a desktop application designed for veterinarians and their assistants to better manage their contacts, pet patient details and appointments. The user interacts with it using a CLI, and it has a GUI created with JavaFX. It is written in Java, and has about 20 kLoC.
+Medeina is a free desktop application designed to provide veterinarians and their assistants with better management over contacts, pet patient details and appointments. User interactions happen through the Command Line Interface (CLI), and it has a Graphical User Interface (GUI) created using JavaFX.
 
 == Summary of contributions
 
 * *Major enhancement*: Autocomplete
-** What it does: Provide autocomplete suggestions that come with descriptions to give users an idea of what the option or prefix is used for. Users are also given information such as existing Nric in Medeina and pet patient names as autocomplete suggestions for certain commands.
-** Justification: Medeina's command syntax involves many options and parameters, which makes it difficult for users to remember. The difficulty in recalling would cause inefficiency in the usage of Medeina. Users of Medeina are expected to handle sensitive information that has little room for errors. By providing autocomplete function for existing data in Medeina, the room for error can be greatly reduced.
-** Highlights: This enhancement requires the exploration of singleton pattern in design and listeners for JavaFX. It involves an in-depth analysis of command syntax and user-input, and in the process, discovered that JavaFX's textfield caret position is not updated in sync with textfield's content.
-** Credits: https://bugs.openjdk.java.net/browse/JDK-8088614[Bug fix for the above mentioned issue]
+** *What it does:* The autocomplete feature provides suggestions for command words, options, prefixes and parameters in a context menu as the user types. Suggestions for options and prefixes come with descriptions to give users an overview of what the option or prefix is used for.
+** *Justification:* Medeina's command syntax involves many options, prefixes and parameters, which can be daunting for potential users. Autocomplete supports and complements Medeina's command syntax to enhance user experience. In addition, the autocomplete feature also provides users a way to reference existing data in Medeina to reduce the margin for errors in typing.
+** *Highlights:* This enhancement requires the exploration of the singleton pattern and listeners for JavaFX. It involves an in-depth analysis of command syntax parsing e.g. to determine which group of tags (contact, pet patient, appointment) to show as autocomplete suggestions based on user input.
+** *Credits:* https://bugs.openjdk.java.net/browse/JDK-8088614[Bug fix for JavaFx textfield caret position issue]
 
 * *Minor enhancement*: Support for changing theme that is persistent beyond app restart.
 
@@ -29,12 +28,14 @@ Medeina is a desktop application designed for veterinarians and their assistants
 ** Enhancements to existing features:
 *** Added a new GUI color scheme (Pull requests https://github.com/CS2103JAN2018-F14-B2/main/pull/156[#156], https://github.com/CS2103JAN2018-F14-B2/main/pull/188[#188])
 ** Documentation:
-*** Did cosmetic tweaks to existing contents of the User Guide: https://github.com/CS2103JAN2018-F14-B2/main/pull/214[#214]
+*** Introduced a new format to document features and examples (https://github.com/CS2103JAN2018-F14-B2/main/pull/137[137])
+*** Re-structure contents in User Guide to improve organization and user-friendliness (https://github.com/CS2103JAN2018-F14-B2/main/pull/214[#214])
+*** Added a section to describe command format/syntax used (https://github.com/CS2103JAN2018-F14-B2/main/pull/244)
 ** Community:
-*** PRs reviewed (with non-trivial review comments): https://github.com[#12], https://github.com[#32], https://github.com[#19], https://github.com[#42]
 *** Reported bugs and suggestions for other teams (examples:  https://github.com/CS2103JAN2018-F11-B1/main/issues/170[#170], https://github.com/CS2103JAN2018-F11-B1/main/issues/179[#179])
 ** Tools:
 *** Integrated a new Github plugin (CircleCI) to the team repo https://github.com/CS2103JAN2018-F14-B2/main/pull/207[#207]
+*** Integrated TravisCI, Coveralls, and Netlify to the team repo
 
 == Contributions to the User Guide
 
@@ -46,8 +47,6 @@ Medeina is a desktop application designed for veterinarians and their assistants
 include::../UserGuide.adoc[tag=autocompleteUG]
 
 include::../UserGuide.adoc[tag=addcommandUG]
-
-include::../UserGuide.adoc[tag=changethemeUG]
 
 == Contributions to the Developer Guide
 

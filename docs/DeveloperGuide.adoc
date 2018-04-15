@@ -173,7 +173,7 @@ The sections below give more details of each component.
 The following diagram displays the structure of the UI component.
 
 .Structure of the UI Component
-image::UiClassDiagram.png[width="800"]
+image::UiClassDiagram.png[width="600"]
 
 *API* : link:{repoURL}/src/main/java/seedu/address/ui/Ui.java[`Ui.java`]
 
@@ -216,7 +216,7 @@ link:{repoURL}/src/main/java/seedu/address/logic/Logic.java[`Logic.java`]
 === Model component
 
 .Structure of the Model Component
-image::ModelClassDiagramUpdated.png[width="800"]
+image::ModelClassDiagramUpdated.PNG[width="800"]
 
 *API* : link:{repoURL}/src/main/java/seedu/address/model/Model.java[`Model.java`]
 
@@ -230,15 +230,17 @@ The `Model`,
 [[Design-Storage]]
 === Storage component
 
+The following diagram displays the structure of the Storage component. +
+
 .Structure of the Storage Component
 image::StorageClassDiagram.png[width="800"]
 
 *API* : link:{repoURL}/src/main/java/seedu/address/storage/Storage.java[`Storage.java`]
 
-The `Storage` component,
+The `Storage` component:
 
-* can save `UserPref` objects in json format and read it back.
-* can save Medeina's Address Book data in xml format and read it back.
+* can save `UserPref` objects in json format and read it back;
+* can save Medeina's data in `xml` format and read it back.
 
 [[Design-Commons]]
 === Common classes
@@ -248,6 +250,861 @@ Classes used by multiple components are in the `seedu.addressbook.commons` packa
 == Implementation
 
 This section describes some noteworthy details on how certain features are implemented.
+
+// tag::autocompleteDG[]
+=== Autocomplete
+
+The autocomplete feature serves to enhance user experience in using the Command Line Interface (CLI). It currently supports command words, options, prefixes, and parameters such as tags, NRIC, pet patient's name, breed, species, colour and blood type.
+
+==== Current Implementation
+
+The implementation logic of the autocomplete feature resides in the `UI` component. The autocomplete feature is driven by a `ChangeListener` attached to `commandTextField.textProperty()` in `CommandBox.java`. Once the `ChangeListener` registers any changes in the content of `commandTextField`, `triggerAutocomplete()` will be executed. +
+
+Suppose that the user is launching Medeina. Before the Graphical User Interface (GUI) is ready, a `CommandBox` object will be initialized for the user to enter commands. The following diagram illustrates a sequence of method calls, starting with the initialization of `CommandBox`, followed by the initialization of an instance of `Autocomplete`, and then calling 3 set attribute methods in the `Logic` component. Subsequently, suppose the user has typed `add -p n/Happy s/Cat b/Persian c/Calico bt/A -o nr/`. The diagram shows a sequence of method calls, starting with triggerAutocomplete(), to get autocomplete suggestions for NRIC to be shown in a context menu.
+
+.Sequence diagram for autocomplete feature
+image::autocompleteSequenceDiagram.png[width="800"]
+
+{empty} +
+`Autocomplete.java` encompasses the logic for parsing user input in the CLI and determining what autocomplete suggestions are to be passed back to `CommandBox.java`. Data required for autocomplete, such as a list of command words, prefixes, options and parameters in Medeina, are retrieved from the `Logic` component. All data required by `Autocomplete` are consolidated in a similar way in the `Logic` component.
+
+The following code shows how NRIC and tags from all `Person` objects are consolidated:
+[source,java]
+----
+public void setAttributesForPersonObjects() {
+    nricInModel = new HashSet<>();
+    personTagsInModel = new HashSet<>();
+
+    for (Person p : model.getAddressBook().getPersonList()) {
+        nricInModel.add(p.getNric().toString());
+        personTagsInModel.addAll(p.getTags());
+    }
+}
+
+public Set<String> getAllNric() {
+    return nricInModel;
+}
+
+public Set<String> getAllPersonTags() {
+    Set<String> personTags = personTagsInModel.stream()
+            .map(pt -> pt.tagName)
+            .collect(Collectors.toSet());
+    return personTags;
+}
+----
+
+You may have noticed that in sequence diagram above (Figure 11), `Autocomplete` is a singleton class that is initialized only once, and there is only 1 instance of `CommandBox` in the application. You may be wondering "can the 3 set attribute methods in the `Logic` component be called only once?". If you are currently unsure, imagine that the user is constantly adding new contacts to Medeina. However, `Autocomplete` uses only data from when Medeina was launched. +
+
+The answer to the question is definitely no. The set attributes methods have to be called whenever there is a change in Medeina's data, otherwise the autocomplete suggestions will not be up to date.
+
+The following code snippet ensures that the data used by `Autocomplete` is kept updated.
+[source,java]
+----
+public void handleAddressBookChangedEvent(AddressBookChangedEvent a) {
+    init(this.logic); // calls the 3 set attributes methods
+    logger.info(LogsCenter.getEventHandlingLogMessage(a, "Local data has changed, update autocomplete data"));
+}
+----
+
+==== Design considerations
+
+===== Aspect: Updating autocomplete data
+
+* **Alternative 1 (current choice):** All Data is updated only when `AddressBookChangedEvent` is raised.
+** Pros: Efficient and with minimal redundant updates.
+** Cons: Implementation is less straight-forward.
+* **Alternative 2 :** Updates the specific required data e.g. NRIC, whenever autocomplete is triggered.
+** Pros: Easy to implement.
+** Cons: Redundant updates. Required data will remain the same, except only when add, delete, or edit commands are executed.
+* **Alternative 3:** All Data is updated whenever autocomplete is triggered.
+** Pros: Easy to implement.
+** Cons: Many redundant data updates. Running for-loops in the `Logic` component for every character the user types, is resource-intensive.
+
+===== Aspect: Event-driven or user-driven
+
+* **Alternative 1 (current choice):** Implement change listener to automatically track user input and provide autocomplete suggestions.
+** Pros: Great improvement in user experience, as Medeina has long and complex command syntax.
+** Cons: Logic for handling caret position and command syntax parsing is complicated and can be prone to bugs.
+* **Alternative 2:** User has to press a specific key e.g. tab to invoke autocompletion.
+** Pros: Less logic to account for, and is thus easier to implement.
+** Cons: User experience is compromised.
+
+===== Aspect: Autocomplete scope
+* **Alternative 1 (current choice):** Autocomplete works only for commands that require options and prefixes.
+** Pros: Reduce unneccessary autocomplete suggestions.
+** Cons: Additional implementation logic to handle checking of command input.
+* **Alternative 2:** Autocomplete works for any user input as long as correct options and prefixes are specifed.
+** Pros: Easy to implement.
+** Cons: A whitespace after a command that doesn't require options and prefixes e.g. `help`, will bring up a list of suggested prefixes. This may cause confusion for the user.
+// end::autocompleteDG[]
+
+===== Aspect: Expanding the autocomplete feature
+
+* **Alternative 1 (current choice):** Include descriptions in autocomplete suggestions for options and prefixes
+** Pros: Great improvement in user experience, as the autocomplete suggestions now serve as a brief overview of what each prefix and options are used for.
+** Cons: Additional implementation logic to handle descriptions e.g. descriptions should not be added to user input in the command box.
+* **Alternative 2:** Keep to just simple autocomplete
+** Pros: No additional logic required.
+** Cons: User experience is compromised.
+
+// tag::addcommandDG[]
+=== Add Command
+This command creates new `Person`, `PetPatient` and `Appointment` objects to be added into Medeina.
+
+==== Current Implementation
+The add command involves a combination of options to differentiate between what objects are to be added. Command syntax required for adding the different objects are shown below. Take note that the command word has been omitted.
+
+----
+ (1) Person: -o n/NAME p/PHONE e/EMAIL a/ADDRESS nr/NRIC
+ (2) PetPatient: -p n/NAME s/SPECIES b/BREED c/COLOUR bt/BLOODTYPE -o nr/NRIC
+ (3) Appointment: -a d/DATETIME r/REMARKS t/TYPE_OF_APPOINTMENT -o nr/NRIC -p n/PET_PATIENT_NAME
+ (4) All 3 objects in one command: -o n/NAME p/PHONE e/EMAIL a/ADDRESS nr/NRIC -p n/NAME s/SPECIES b/BREED c/COLOUR bt/BLOODTYPE -a d/DATETIME r/REMARKS t/TYPE_OF_APPOINTMENT
+----
+
+Syntax (4) is equivalent to syntaxes (1), (2), and (3), but with fewer parameters required. Syntax (4) is designed to increase efficiency for the user in using the CLI, by reducing typing of redundant parameters. The parsing of these 4 `add` command syntaxes is performed using regular expressions pattern matching in `AddCommandParser`. +
+
+The following diagram illustrates the sequence of methods that occurs when adding a `PetPatient` object to Medeina.
+
+.Sequence diagram for autocomplete feature
+image::addCommandSequenceDiagram.png[width="800"]
+
+{empty} +
+
+A `PetPatient` object must be assigned to an existing `Person` object. The `Person` object refers to a point of contact, which could be the owner of the pet patient, or a volunteer in-charge of the pet patient. This type of dependency is verified in `AddCommand.java`.
+
+The follow code shows how dependency between `PetPatient` and `Person` object is verified before the `PetPatient` object is added to `Model` component:
+[source,java]
+----
+private CommandResult addNewPetPatient() throws DuplicatePetPatientException, CommandException {
+    person = getValidOwner(ownerNric);
+    model.addPetPatient(petPatient);
+    return new CommandResult(String.format(MESSAGE_SUCCESS_PETPATIENT, petPatient, person));
+}
+
+private Person getValidOwner(Nric ownerNric) throws CommandException {
+    Person validOwner = model.getPersonWithNric(ownerNric);
+    if (validOwner == null) {
+		throw new CommandException(MESSAGE_INVALID_NRIC);
+    }
+    return validOwner;
+}
+----
+
+Dependencies for `Appointment` object is also verified in a similar way in `AddCommand.java`.
+
+==== Design considerations
+
+===== Aspect: Consolidating similar commands
+
+* **Alternative 1 (current choice):** A single `add` command with options to differentiate objects to be added.
+** Pros: It is intuitive for users to just remember just 1 `add` command. Greater flexibility in introducing "power" command like syntax (4).
+** Cons: Complex implementation logic
+* **Alternative 2:** 3 separate commands e.g. `addperson`, `addpetpatient`, `addappointment`
+** Pros: Easy to implement.
+** Cons: Requires syntax (4) to be implemented as a separate command. More commands for the user to remember.
+
+==== Current Limitations
+Currently, `add`  command uses up to 3 options in its syntax. The order of options must be preserved due to the use of regular expressions to match command syntax pattern. This differs from prefixes which have flexibility in ordering. As a result, the add command may be less intuitive for users.
+
+Another thing to note is that, the syntax for adding an appointment takes in the NRIC of an existing contact and a pet patient name. The pet patient that is specified must be one that assigned under the contact. However, the adding of a new appointment does not account for cases in which a particular contact has pet patients sharing the same name. The `add` command will assign the new appointment for the pet patient which has a lower `index` in Medeina. A simple workaround for this problem, is to `edit` the pet patient name with slight variation to differentiate them e.g. "Happy1", "Happy2".
+
+==== Future Work
+The problem of multiple pet patient sharing the same name under a contact will be addressed in near future. The `add` command syntax can be modified to include an optional index to differentiate the pet patients without having to edit their names. Aside from this, further improvements can be made to simplify the command syntax of `add`.
+
+// end::addcommandDG[]
+
+// tag::editcommandDG[]
+=== Edit Command
+
+This command allows a user to edit `Person`, `PetPatient` and `Appointment` objects.
+
+==== Current Implementation
+
+Below is a sequence diagram detailing the interaction between the various classes upon invocation of the `edit` command.
+
+.Sequence Diagram for Edit Command
+image::EditCommandSequenceDiagram.png[width="800"]
+
+{empty} +
+
+We examine the flow of events, starting when the command goes through `EditCommandParser` for parsing. The type of information provided by the user will be
+identified through the use of regular expression `Pattern` objects. +
+
+[source,java]
+-----
+private static final Pattern EDIT_COMMAND_FORMAT_PERSON = Pattern.compile("-(o)+(?<personInfo>.*)");
+private static final Pattern EDIT_COMMAND_FORMAT_PET_PATIENT = Pattern.compile("-(p)+(?<petPatientInfo>.*)");
+private static final Pattern EDIT_COMMAND_FORMAT_APPOINTMENT = Pattern.compile("-(a)+(?<appointmentInfo>.*)");
+-----
+
+For instance, if the user has keyed in `edit -p 1 nr/S1234567Z` (same command as in the sequence diagram), then through the matching of the `Pattern` objects,
+we will know that the user intends to edit a `PetPatient` object, since it matches the pattern
+ `-(p)+(?<petPatientInfo>.*)`. +
+
+Depending on which case matches (refer to code snippet below), we will then call the relevant parsing method for the
+information provided by the user. Following the example from above, since the user has supplied the `-p` argument,
+further parsing of the information will be done in the `parsePetPatient` method.
+
+[source,java]
+-----
+public EditCommand parse(String args) throws ParseException {
+    String trimmedArgs = args.trim();
+
+    ...
+
+    // Edit existing pet patient
+    final Matcher matcherForPetPatient = EDIT_COMMAND_FORMAT_PET_PATIENT.matcher(trimmedArgs);
+    if (matcherForPetPatient.matches()) {
+        String petPatientInfo = matcherForPetPatient.group("petPatientInfo");
+        return parsePetPatient(petPatientInfo);
+    }
+
+    ...
+
+    // throws exception for invalid format
+    throw new ParseException(
+        String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE)
+        );
+}
+-----
+
+The further parsing of the information in `parsePerson()`, `parsePetPatient()` and `parseAppointment()` will require
+the use of `EditPersonDescriptor`, `EditPetPatientDescriptor` and `EditAppointmentDescriptor` respectively to create
+the final objects to be replaced in the corresponding lists located inside `AddressBook`. +
+
+The descriptor objects are used primarily for the transfer of information to the corresponding `Person`, `PetPatient`
+or `Appointment` object. +
+
+Using the example as explained previously, a new `EditPetPatientDescriptor` object will be created, and the relevant
+information is retrieved out. Since only `PREFIX_NRIC` is present (`nr/`), then only the `ownerNric` field in
+`EditPetPatientDescriptor` will be set.
+
+[source,java]
+-----
+public EditCommand parsePetPatient(String petPatientInfo) throws ParseException {
+
+    ...
+
+    EditPetPatientDescriptor editPetPatientDescriptor = new EditPetPatientDescriptor();
+    try {
+        ParserUtil.parsePetPatientName(argMultimap.getValue(PREFIX_NAME))
+                .ifPresent(editPetPatientDescriptor::setName);
+        ParserUtil.parseSpecies(argMultimap.getValue(PREFIX_SPECIES))
+                .ifPresent(editPetPatientDescriptor::setSpecies);
+        ParserUtil.parseBreed(argMultimap.getValue(PREFIX_BREED))
+                .ifPresent(editPetPatientDescriptor::setBreed);
+        ParserUtil.parseColour(argMultimap.getValue(PREFIX_COLOUR))
+                .ifPresent(editPetPatientDescriptor::setColour);
+        ParserUtil.parseBloodType(argMultimap.getValue(PREFIX_BLOODTYPE))
+                .ifPresent(editPetPatientDescriptor::setBloodType);
+        ParserUtil.parseNric(argMultimap.getValue(PREFIX_NRIC))
+                .ifPresent(editPetPatientDescriptor::setOwnerNric);
+        parseTagsForEdit(argMultimap.getAllValues(PREFIX_TAG))
+                .ifPresent(editPetPatientDescriptor::setTags);
+    } catch (IllegalValueException ive) {
+        throw new ParseException(ive.getMessage(), ive);
+    }
+
+    ...
+
+    return new EditCommand(index, editPetPatientDescriptor);
+}
+-----
+
+The relevant descriptor will be passed over to `EditCommand` at the end of the function, as can be seen above. +
+
+Within `EditCommand`, there are a few private variables specified. One of the key things to note is that we are using
+an `enum` to identify the type of object that we are editing. After the relevant method is called for `EditCommand`,
+the index, type and descriptor will be set in the created `EditCommand` object, as can be seen in the code snippet below.
+
+[source,java]
+-----
+public enum Type { EDIT_PERSON, EDIT_PET_PATIENT, EDIT_APPOINTMENT };
+
+private Index index;
+private EditPersonDescriptor editPersonDescriptor;
+private EditPetPatientDescriptor editPetPatientDescriptor;
+private EditAppointmentDescriptor editAppointmentDescriptor;
+private Type type;
+
+private Person personToEdit; // original
+private Person editedPerson; // edited
+private PetPatient petPatientToEdit;
+private PetPatient editedPetPatient;
+private Appointment appointmentToEdit;
+private Appointment editedAppointment;
+
+...
+
+public EditCommand(Index index, EditPetPatientDescriptor editPetPatientDescriptor) {
+        requireNonNull(index);
+        requireNonNull(editPetPatientDescriptor);
+
+        this.index = index;
+        this.editPetPatientDescriptor = new EditPetPatientDescriptor(
+                                            editPetPatientDescriptor
+                                            );
+        this.type = EDIT_PET_PATIENT;
+}
+-----
+
+After this stage, the descriptors are processed based on the type using a switch (not shown). For instance, since the
+user is editing a pet patient, then using the index of the pet patient in the last shown list, the `PetPatient` object
+to be modified will be retrieved. Using the information from the descriptor, a new `PetPatient` object will be created,
+so that we can replace the edited object in the list of `PetPatients`. The modified fields will come from the
+`EditPetPatientDescriptor` object, while the unmodified fields will come from the old `PetPatient` object, as can be
+seen in the code snippet below.
+
+[source,java]
+-----
+protected void preprocessUndoableCommandForPetPatient() throws CommandException {
+    List<PetPatient> lastShownPetPatientList = model.getFilteredPetPatientList();
+
+    if (index.getZeroBased() >= lastShownPetPatientList.size()) {
+        throw new CommandException(Messages.MESSAGE_INVALID_PET_PATIENT_DISPLAYED_INDEX);
+    }
+
+    petPatientToEdit = lastShownPetPatientList.get(index.getZeroBased());
+    editedPetPatient = createEditedPetPatient(petPatientToEdit, editPetPatientDescriptor);
+}
+
+private static PetPatient createEditedPetPatient(PetPatient petPatientToEdit,
+                                                     EditPetPatientDescriptor editPetPatientDescriptor) {
+    assert petPatientToEdit != null;
+
+    PetPatientName updatedName = editPetPatientDescriptor.getName().orElse(petPatientToEdit.getName());
+    Species updatedSpecies = editPetPatientDescriptor.getSpecies().orElse(petPatientToEdit.getSpecies());
+    Breed updatedBreed = editPetPatientDescriptor.getBreed().orElse(petPatientToEdit.getBreed());
+    Colour updatedColour = editPetPatientDescriptor.getColour().orElse(petPatientToEdit.getColour());
+    BloodType updatedBloodType = editPetPatientDescriptor.getBloodType().orElse(petPatientToEdit.getBloodType());
+    Nric updatedOwnerNric = editPetPatientDescriptor.getOwnerNric().orElse(petPatientToEdit.getOwner());
+    Set<Tag> updatedTags = editPetPatientDescriptor.getTags().orElse(petPatientToEdit.getTags());
+
+    return new PetPatient(
+            updatedName,
+            updatedSpecies,
+            updatedBreed,
+            updatedColour,
+            updatedBloodType,
+            updatedOwnerNric,
+            updatedTags
+    );
+}
+-----
+
+Now that the relevant object has been created, it will go through a series of checks to ensure the validity of the data
+that the user has keyed in. This will be detailed under the next section, <<Edit-Command-Design-Consideration-Dependency-Resolution>>. +
+
+Finally, the relevant listing will be updated, so that the user can see the changes immediately in the Medeina
+application. A success message will be returned if the command has been executed fully with no errors.
+
+[source,java]
+-----
+public CommandResult executeUndoableCommand() throws CommandException {
+    try {
+        switch (type) {
+        case EDIT_PERSON:
+            resolvePersonDependencies();
+            model.updatePerson(personToEdit, editedPerson);
+            break;
+        case EDIT_PET_PATIENT:
+            resolvePetPatientDependencies();
+            model.updatePetPatient(petPatientToEdit, editedPetPatient);
+            break;
+        case EDIT_APPOINTMENT:
+            checkForClashes();
+            checkForSameAppointmentTiming();
+            checkForConcurrentAppointments();
+            checkForPastAppointment();
+            model.updateAppointment(appointmentToEdit, editedAppointment);
+            break;
+        default:
+            break;
+        }
+    } catch (DuplicatePersonException dpe) {
+    ...
+    }
+    switch (type) {
+    case EDIT_PERSON:
+        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, editedPerson));
+    case EDIT_PET_PATIENT:
+        model.updateFilteredPetPatientList(PREDICATE_SHOW_ALL_PET_PATIENTS);
+        return new CommandResult(String.format(MESSAGE_EDIT_PET_PATIENT_SUCCESS, editedPetPatient));
+    case EDIT_APPOINTMENT:
+        model.updateFilteredAppointmentList(PREDICATE_SHOW_ALL_APPOINTMENTS);
+        return new CommandResult(String.format(MESSAGE_EDIT_APPOINTMENT_SUCCESS, editedAppointment));
+    default:
+        return null;
+    }
+}
+-----
+
+Below is the activity diagram for `edit` command to give us a better insight on how all the above-mentioned operations work together.
+
+.Activity Diagram for Edit Command
+image::EditActivityDiagram.png[width="800"]
+
+
+==== Design Considerations
+
+===== Consolidating Similar Commands
+
+Initially, we have considered having multiple commands for adding of `Person`, `PetPatient` and `Appointment` objects.
+For example:
+
+* Editing a Person: `editperson`
+* Editing a PetPatient: `editpetpatient`
+* Editing an Appointment: `editappointment`
+
+However, implementing the logic this way will make typing very inefficient for users, since the commands are extremely long.
+This defeats the main purpose of our CLI-centered application. +
+
+As such, to make things simpler, and also more user friendly for our users, we have decided to consolidate these
+3 variants into just one single command, with the use of an option to indicate which object the user is trying to edit. +
+
+Below is the final command syntax for `edit` command after taking this into consideration:
+
+* Editing a Person: `edit *-o* INDEX [n/CONTACT_NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [nr/NRIC] [t/TAGS]...`
+* Editing a PetPatient : `edit *-p* INDEX [n/PET_PATIENT_NAME] [s/SPECIES] [b/BREED] [c/COLOUR] [bt/BLOOD_TYPE] [t/TAGS]...`
+* Editing an Appointment : `edit *-a* INDEX [d/YYYY-MM-DD HH:MM] [r/REMARK] [t/TAGS]...`
+
+[[Edit-Command-Design-Consideration-Dependency-Resolution]]
+===== Resolution of Dependencies
+
+The problem with editing the various fields of an object is the breaking of dependencies that it might have with other objects. +
+
+The various dependencies and / or other considerations are listed in the table below:
+
+[cols="20, 80", options="header"]
+|=====
+| Object
+| Dependency / Considerations
+
+.^a|Person
+a|* If editing name, phone, email, address: no problems posed.
+* If editing person's NRIC: all pets and their respective appointments under specified person must also be modified (NRIC fields). Retrieve all pets and appointments with said NRIC and update accordingly.
+
+.^a|PetPatient
+a|* If editing species, breed, colour, blood type: no problems posed.
+* If editing name: search for and update all related appointments.
+* If editing owner's NRIC: Check if NRIC exists. If yes, search and update all relevant appointments. If no, throw an exception.
+* If editing both name and owner's NRIC: Check if NRIC exists. If yes, search and update all relevant appointments. If no, throw an exception. Also, search for and update all related appointments under the specified pet's name.
+
+.^a|Appointment
+a|* If editing remark, type: no problems posed.
+* If editing date and time of appointment:
+** Check for clashes (existing appointment at that time slot).
+** Check for concurrent appointments.
+** Check whether stated date and time is in the past.
+|=====
+
+These dependencies are resolved within Medeina for our users' convenience. +
+
+We will now show two notable examples of dependency resolution in Medeina.
+
+====== Resolving PetPatient Dependencies with Name and Owner NRIC
+
+Resolution of PetPatient dependencies is required when changing its name or its owner's NRIC. The code to resolve these
+dependencies is as follows:
+
+[source,java]
+-----
+private void resolvePetPatientDependencies() throws CommandException,
+            AppointmentNotFoundException, DuplicateAppointmentException {
+
+    Nric oldNric = petPatientToEdit.getOwner();
+    Nric newNric = editedPetPatient.getOwner();
+    PetPatientName oldPetName = petPatientToEdit.getName();
+    PetPatientName newPetName = editedPetPatient.getName();
+
+    if (!oldNric.equals(newNric)) { // nric edited, I want to change owner
+        Person newOwner = model.getPersonWithNric(newNric); // new owner must exist
+        if (newOwner == null) {
+            throw new CommandException("New owner must exist first before updating pet patient's owner NRIC!");
+        }
+        // we only update nric for appointments for that specific pet patient!
+        // this is because it might be an owner transfer. If there are some other pets under the previous owner,
+        // he/she may still be holding on to these pets.
+        updateAppointmentByOwnerNricForSpecificPetName(oldNric, newNric, oldPetName);
+    }
+    if (!oldPetName.equals(newPetName)) { // name edited
+        updateAppointmentByPetPatientName(newNric, oldPetName, newPetName);
+    }
+}
+-----
+
+In the code snippet above, we note that a check has been done for whether the old owner's NRIC and the new owner's NRIC are
+equivalent. If they are not, this tells us that the owner's NRIC has been changed, and we search through the list of Persons
+to check if the new owner with the specified NRIC exists. If it exists, then we update all the appointments tied to the pet patient
+to the new owner. +
+
+If the new pet patient's name is not equivalent to the old pet patient's name, it means that the user has edited it, and hence
+we update all appointments for the selected pet patient to be tied to the new pet patient's name as supplied by the user.
+
+====== Checking for Concurrent Appointments
+
+Checking for concurrent appointments is another key part of the `edit` command, where we have to ensure that appointments
+do not overlap with each other. The relevant code for the checking for concurrent appointments is shown below:
+
+[source,java]
+-----
+private void checkForConcurrentAppointments() throws ConcurrentAppointmentException {
+    LocalDateTime oldDateTime = appointmentToEdit.getDateTime();
+    LocalDateTime newDateTime = editedAppointment.getDateTime();
+
+    if (model.hasConcurrentAppointment(oldDateTime, newDateTime)) {
+        throw new ConcurrentAppointmentException();
+    }
+}
+
+public boolean hasConcurrentAppointment(LocalDateTime oldDateTime, LocalDateTime newDateTime) {
+    for (Appointment a : addressBook.getAppointmentList()) {
+        LocalDateTime dateTime = a.getDateTime();
+        if (newDateTime.isAfter(dateTime)
+                && newDateTime.isBefore(dateTime.plusMinutes(30))
+                && !dateTime.equals(oldDateTime)) {
+            return true;
+        }
+        if (newDateTime.isBefore(dateTime)
+                && newDateTime.plusMinutes(30).isAfter(dateTime)
+                && !dateTime.equals(oldDateTime)) {
+            return true;
+        }
+    }
+    return false;
+}
+-----
+
+The main checking for concurrent appointments is done in the method `hasConcurrentAppointment()` within `ModelManager`.
+We loop through the entire list of appointments, and check whether there is any overlap in timing for both before and after
+every appointment in the list.
+
+==== Current Limitations
+
+As of now, we do not have a list for past appointments, and a separate list for future appointments. +
+
+As such, this will make the looping through of the appointments as previously mentioned very slow, as more and more appointments are added to the list.
+
+==== Future Work
+
+One of the limitations that we want to address will be the separation of past and future appointments. This is for greater
+efficiency when we loop through appointments for editing.
+
+Also, as of now, pet patients only have the following fields: name, species, breed, colour, blood type, owner NRIC and tags.
+It is our desire that Medeina be able to handle most of the tasks as required by veterinarians and their assistants, and
+this will include the ability to view and update a pet patient's medical history so that Medeina can be an all-in-one
+application for our users. As such, one of the key future improvements to the current `edit` command will be the ability to update a
+pet patient's medical history. +
+
+// end::editcommandDG[]
+
+
+// tag::ListPets[]
+=== Display List of PetPatients
+==== Current Implemaentation
+Since Veterinarians and their assistants have the need to view the PetPatients as a list and see how many PetPatients belong to the same Owner. It is necessary to implement the PetPatient List feature.
+
+image::List_Command.PNG[width="500"]
+
+==== Design Consideration
+* **Alternative 1:** Use tab function to switch between PetPatientList and PersonList
+
+** Pros: The UI will be neat to see, saves more space for calendar view
+** Cons: The user will not be able to see both PetPatient and Owners at the same time.
+
+* **ALternative 2:** Implement another Panel to display PetPatients.
+
+** Pros: User will be able to see both lists at the same time
+** Cons: Takes up more space, making it difficult to display appointments in the future.
+
+==== Current Limitations
+More command and features relating to PetPatient List are to be properly developed, the tags of PetPatients are not properly organised.
+
+==== Future Work
+Implement the corresponding Add, Delete, List commands for petPatients and decide on the tags to be used for petPatients.
+// end::ListPets[]
+
+// tag::calendar[]
+=== Show Appointments on calendar
+==== Current Implementation
+
+Since veterinarians and their assistants have the need to constantly check their schedule for upcoming appointments, a calender feature is required to show future appointments.
+
+Third party API `CalendarFX` is used as a Java calendar frame to show Appointments.
+
+image::Show_Appointments.png[width="650"]
+
+
+==== Design Consideration
+* **Alternative 1:** Use `iCalendar` from Jfxtra library
+
+** Pros: Easy to implement, convenient to use. Can easily import from Jfxtra library.
+** Cons: UI styles are limited, the API is limited;
+
+* **Alternative 2 (current choice):** Implement CalendarFX API library.
+** Pros: Versatile APIs such as set style for each calendar, and much better looking UI than iCalendar.
+** Cons: Extra work required to integrate CalendarFX files into project, and may cause build problems if not implemented properly.
+
+==== Current Limitations
+
+There's a known issue in CalendarFx, when switch from a year with appointments inside to a year without, the CalendarFx will still color the same appointment data despite there's no entry on that date.
+
+Users and developers should know that this issue is embedded inside CalendarFx, and hopefully can be resolved in future versions of CalendarFx.
+
+==== Future Work
+We may be able to make enhancements to the Medeina's UI such as changing theme colour to match the UI colour of CalendarFX.
+// end::calendar[]
+
+// tag::find[]
+=== Finding a Contact or Pet Patient
+The find function allows users to look for contacts or pet patients.
+
+==== Current Implementation
+As Medeina caters to veterinarians, there is a need to be able to search through heaps of data to find specific information. For example, users can search by contacts to find a particular `Person` through their `Nric`, or search by pet patients to find for possible blood donors through their `BloodType`.
+
+The below diagram illustrates the interaction between the `Logic` and `Model` components in finding pet patients with a specific `BloodType`.
+
+.Interaction between `Logic` and `Model` components upon running `find -p bt/B`.
+image::FindPetPatientDiagram.png[width="800"]
+
+{empty} +
+`FindCommandParser.java` handles and separates user input based on a regular expression that captures the matching groups of options `-o` and `-p`. The results are then parsed into `ArgumentMultimap` which separates user input into accepted prefixes of `n/NAME`, `nr/NRIC` and `t/TAGS` for contacts (option `-o`), `n/NAME`, `s/SPECIES`, `b/BREED`, `c/COLOUR`, `bt/BLOOD TYPE` and `t/TAGS` for pet patients (option `-p`).
+
+The keywords for each prefix found is then added as `String[]` into a `HashMap`, with a suitable `String` acting as a key for the values. A new `FindCommand` is created with the `HashMap` of all the keywords of all found relevant prefixes. Upon initialization of `FindCommand`, the type is determined (1 for contact, 2 for pet patient) based on the keys present in the `HashMap`.
+
+In `execute()`, there is a switch that determines if the find is for contacts or pet patient, based on the found type. The commands `findOwner()` or `findPetPatient()` are called respectively. For each of the prefix, if it exists, a `Predicate` is created for it with its keywords. All of the prefixes add together through the `.and(...)` function to make one final `Predicate` that encompasses of all the prefixes.
+
+[source, java]
+----
+private CommandResult findOwner() {
+    Predicate<Person> finalPredicate = null;
+
+    //... code for Predicate for name and nric ...
+
+    if (hashMap.containsKey("ownerTag")) {
+        String[] tagKeywords = hashMap.get("ownerTag");
+        Predicate<Person> tagPredicate = person -> Arrays.stream(tagKeywords)
+                .anyMatch(keyword -> StringUtil.containsWordIgnoreCase(person.getTagString(), keyword));
+        if (finalPredicate == null) {
+            finalPredicate = tagPredicate;
+        } else {
+            finalPredicate = finalPredicate.and(tagPredicate);
+        }
+    }
+
+    model.updateFilteredPersonList(finalPredicate);
+    updatePetListForOwner();
+    return new CommandResult(getMessageForPersonListShownSummary(model.getFilteredPersonList().size())
+            + "\n"
+            + getMessageForPetPatientListShownSummary(model.getFilteredPetPatientList().size()));
+}
+
+----
+
+The model then gets called via `updateFilteredPersonList(...)` or `updateFilteredPetPatientList(...)` together with the final predicate, as shown above.
+
+.Listing of found pet patients and contacts of found pet patients after running the command `find -p s/Cat bt/B`.
+image::FindPetPatientResult.PNG[width="800"]
+
+{empty} +
+As Medeina has both contacts and pet patients, it should be possible for users to see contacts of pet patients and vice versa. As such, a function is called after the update to reflect similar changes on the other panel. An exmple of the result obtained is shown above.
+
+==== Design Consideration
+
+===== Aspect: Improving search
+* **Alternative 1:** Each additional prefix will be a `or`.
+** Pros: Covers more ground, users can search for information with each individual prefix (i.e. `-o n/A nr/NRIC_NOT_A` will get both `A` and `NRIC_NOT_A`)
+** Cons: Chance that too much information will be listed, making it too broad of a search for specific things.
+
+* **Alternative 2 (current choice):** Each additional function will be an `and`.
+** Pros: More specific, users can search for specific information with the prefixes adding up (i.e. `-p s/Cat bt/B` searches for pet patients who are cats and have blood type B)
+** Cons: Chance that the search is too specific, and will display no results (i.e. `-o n/A nr/NRIC_NOT_A` will not get anything as each contact only has 1 `Nric`)
+//end::find[]
+==== Current Limitations
+Users are unable to find appointment related elements as the `Appointment` listing function in the calendar is different from the listing function of the other classes of `Person` and `PetPatient`. As such, there is currently no implementation to find an appointment based on types or remarks, which may pose as inconvenience to veterinarians, should they want to search by a specific type of appointment or remark.
+
+==== Future Considerations
+In the future, Medeina might consider adding functions that allow for finding of appointments by types or remarks, as well as update the calendar accordingly with the results of the find command.
+
+
+
+// tag::listappt[]
+=== Listing Appointments of Different Views and Dates
+The command allows users to list appointments based on the date that they wish to see, and the results are displayed via the API of CalendarFX.
+
+==== Current Implementation
+After Medeina implemented CalendarFX, users are able to view appointments at a specified date by clicking on the Calendar. However, as Medeina is a CLI-based application, users should not be required to move their mouse. Instead, users should be able to jump to certain dates to check appointments using the command line only.
+
+.Day view of the Calendar obtained by the `listappt -d` command.
+image::ListAppointmentDayView.PNG[width="800"]
+
+{empty} +
+The implemented CalendarFX API consists of 4 different views: Day, Week, Month and Year views. Users should be able to get a specific requested view of a date, month, or year they wish to see.
+
+The below diagram illustrates the interaction between the `UI`, `Logic` and `Events` components in the `ListAppointment` command.
+
+.Sequence diagram for interactions between the different components upon running the `listappt -y 2017` command.
+image::SDforListAppointment.png[width="800"]
+
+{empty} +
+`ListAppointmentParser.java` handles and separates the request of users based on a regular expression that captures the matching groups of options `-d`, `-w`, `-m` and `-y`. The parser then checks the remaining user input, and parses it into `LocalDate`, `YearMonth` and `Year` classes. Should there be no remaining user input after the option, the current date is obtained as the field. A new `ListAppointmentCommand` is created with the type (1 for year, 2 for month, 3 for week, 4 for date) as well as the parsed class.
+
+In `execute()`, there is a switch that determines the type of command run based on the type obtained from the parser. The relevant functions to change the Calendar gets called based on the type, and an event gets called to handle the change. If an appointment is in the past, a check is done to determine whether there were appointments in the year of that requested date, so that users are not able to jump into years that should not have appointments (i.e. years before Medeina existed).
+
+[source, java]
+----
+private CommandResult getYearView() throws NoAppointmentInYearException {
+    if (year.isBefore(Year.now())) {
+        if (!checkPastAppointment(year.getValue())) {
+            throw new NoAppointmentInYearException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, MESSAGE_USAGE));
+        }
+    }
+
+    EventsCenter.getInstance().post(new ChangeYearViewRequestEvent(year));
+    return new CommandResult(String.format(MESSAGE_SUCCESS, "year"));
+}
+----
+
+An event is then called to handle change the view with the specified date. The handler resides in `CalendarWindow.java` to be able to switch the `calendarView` to the specified requested view.
+
+[source, java]
+----
+private void changeWeekView(LocalDate date) {
+    WeekFields weekFields = WeekFields.SUNDAY_START;
+    int week = date.get(weekFields.weekOfWeekBasedYear()) - 1;
+
+    if (week == 0 && date.getMonthValue() == 12) {
+        //wraparound
+        week = 52;
+        calendarView.showWeek(Year.of(date.getYear()), week);
+    } else if (week == 0 && date.getMonthValue() == 1) {
+        //wraparound
+        LocalDate dateOfFirstJan = LocalDate.of(date.getYear(), 1, 1);
+        if (dateOfFirstJan.getDayOfWeek().getValue() != 7) {
+            week = 52;
+            calendarView.showWeek(Year.of(date.getYear() - 1), week);
+        } else {
+            week = 53;
+            calendarView.showWeek(Year.of(date.getYear() - 1), week);
+        }
+    } else {
+        calendarView.showWeek(Year.of(date.getYear()), week);
+    }
+}
+----
+
+As the week view in calendarFX is different from the obtaining the week of year in the original Java API, there was a need to switch the week `value` obtained from `LocalDate` to fit the week `value` in the Calendar. Above illustrates the snippet of code used to convert from the `value` of the week obtained from `LocalDate` to fit the Calendar.
+
+Upon a successful listing, a `CommandResult(...)` class is called with a success message of the specified view.
+//end::listappt[]
+
+==== Design Consideration
+
+===== Aspect: Improving command usage
+* **Alternative 1:** Use a fixed `date` field.
+** Pros: Users only need to remember that a `date` in the format of YYYY-MM-DD is accepted for each `listappt` command.
+** Cons: Users have to type more than required, especially for Year and Month views.
+
+* **Alternative 2 (current choice):** Use a changing field: `Year` for Year view, `YearMonth` for Month view, `LocalDate` for Week and Day views.
+** Pros: Users do not need to type redundant information. A Year view will be in the format of YYYY while a Month view will be in the format of YYYY-MM or MM (with automatically allocated current year).
+** Cons: Users have to remember that Year view only accepts the year, while the Month view only accepts a year and month, or month. The Week and Day views will not accept just a year or year and month, but requires the specific date.
+
+===== Aspect: Improving user productivity
+* **Alternative 1 (current choice):** Implement functions that requires users to type to switch views instead of clicking
+** Pros: Users do not need to switch between using a mouse and a keyboard, which increases productivity for users accustomed to the CLI based nature of Medeina.
+** Cons: Need to implement functions that help will change views (`listappt` or `la` command).
+
+* **Alternative 2:** Use buttons and clicks to switch a calendar than to manually input a command
+** Pros: There will be no need to implement any functions pertaining to `ListAppointment`.
+** Cons: Defeats the purpose of a CLI-based application.
+
+// tag::delete[]
+=== Deletion and Force Deletion of Contact, Pet Patient and Appointment
+The delete function allows its users to get rid of obsolete information.
+
+==== Current Implementation
+Medeina has multiple important classes to handle: `Person`, `PetPatient` and `Appointment`. As Medeina caters to veterinarians, there is a need for the ability to remove the mentioned classes. For example, an `Appointment` can be deleted should a contact decide not to go for the appointment anymore, a `PetPatient` should be deleted if a pet patient dies, and a `Person` should be deleted if a contact decides to immigrate permanently.
+
+The below diagram illustrates the interaction between `Logic` and `Model` components during the deletion of a contact.
+
+.Interaction of `Logic` and `Model` Components through the `delete -o 1` command.
+image::DeletePersonDiagramForDelete.png[width="800"]
+
+{empty} +
+`DeleteCommandParser.java` handles and separates the deletion based on a regular expression that captures the matching groups of options `-o`, `-p`, `-a`, `-fp` and `-fo`. Next, the parser gets the `Index` from user input to determine the element to delete. The parser then creates a new `DeleteCommand` with the type (1 for contact, 2 for pet patient, 3 for appointment, 4 for force contact, 5 for force pet patient), as well as the `Index`.
+
+In `execute()`, there is a switch that determines the type of command run based on the type obtained from the parser. The normal delete functions (types 1, 2, 3) subsequently calls the `Model` component to properly remove the element.
+
+[source,java]
+----
+private CommandResult deleteAppointment() {
+     //... code ...
+     requireNonNull(appointmentToDelete);
+     model.deleteAppointment(appointmentToDelete);
+     //... code ...
+     return new CommandResult(String.format(MESSAGE_DELETE_APPOINTMENT_SUCCESS, appointmentToDelete));
+ }
+----
+However, for the force delete functions (types 4, 5), dependencies have to be removed before the element itself can be removed, as shown by the snippet of code from `DeleteCommand.java` below.
+
+[source,java]
+----
+private CommandResult deleteForcePerson() {
+    //... code ...
+
+    List<PetPatient> petPatientsDeleted = model.deletePetPatientDependencies(personToDelete);
+    List<Appointment> appointmentsDeleted = new ArrayList<>();
+    for (PetPatient pp : petPatientsDeleted) {
+        appointmentsDeleted.addAll(model.deleteAppointmentDependencies(pp));
+        deleteDependenciesList += "\n" + (String.format(MESSAGE_DELETE_PET_PATIENT_SUCCESS, pp));
+    }
+    for (Appointment appointment : appointmentsDeleted) {
+        deleteDependenciesList += "\n" + (String.format(MESSAGE_DELETE_APPOINTMENT_SUCCESS, appointment));
+    }
+    model.deletePerson(personToDelete);
+
+    //... code ...
+
+    return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS, personToDelete) + deleteDependenciesList);
+}
+----
+
+It can be noted that pet patient dependencies are deleted before appointment dependencies. This is because of the dependency "hierachy" between the different elements. A pet patient is uniquely tied to a contact based on `Nric`, while an appointment is uniquely tied to a pet patient based on `Nric` and `PetPatientName`. As a result, pet patients must first be deleted before determining which appointments are to be deleted.
+
+.Listing of relevant dependencies deleted upon a force deletion of a contact.
+image::DeleteDependenciesForForce.png[width="800"]
+
+{empty} +
+For each dependency deleted, it is stored in `List<...>` so that the `CommandResult(...)` returns all deleted dependencies as well as the main, deleted element.
+
+==== Design Consideration
+
+===== Aspect: Improving user friendliness
+* **Alternative 1:** Use different commands for different delete functions.
+** Pros: It is easier to implement. The command can just take in an `Index` without any options before.
+** Cons: Hard on users as they will have to type a different command for every type of delete (i.e. `deleteperson`, `deletepetpatient` etc.).
+
+* **Alternative 2 (current choice):** Use one overseeing `delete` command.
+** Pros: Users do not need to go through the hassle of trying to remember every different command of delete.
+** Cons: Extra work to determine the type of deletion (i.e. `-a` for Appointment, `-p` for PetPatient etc.).
+
+===== Aspect: Ease of Use
+* **Alternative 1:** Have no force delete function.
+** Pros: There will be no need to implement functions to delete prior dependencies before a deletion is done. An exception can just be thrown if dependencies still exist.
+** Cons: Users will need to manually find and delete every dependency manually.
+
+* **Alternative 2 (current choice):** Have a force delete function that will delete all dependencies along with the element to be deleted.
+** Pros: Easier to use. Users do not need to manually find and delete all dependencies, it just gets deleted immediately if required.
+** Cons: Need to delete dependencies upon calling a force function. In addition, the dependencies deleted must be shown as well to inform users of all deleted elements.
+//end::delete[]
+
+==== Current Limitations
+As of now, users are only capable of deleting an element based on its `Index` displayed in Medeina. This may pose as difficult for users if they want to delete an element based on the list displayed through the `list` command, especially if there is alot of data in Medeina.
+
+==== Future Considerations
+In the coming future, the `Delete` function can be altered such that it allows users to input other fields other than just `Index`, so that users do not need to get a list before deleting a particular element, especially if the user wants to delete an element that is not in the current listing (i.e. not on the listing after a `find` command).
+
 
 // tag::undoredo[]
 === Undo/Redo feature
@@ -377,485 +1234,6 @@ image::UndoRedoActivityDiagram.png[width="650"]
 ** Cons: Requires dealing with commands that have already been undone: We must remember to skip these commands. Violates Single Responsibility Principle and Separation of Concerns as `HistoryManager` now needs to do two * different things.
 // end::undoredo[]
 
-// tag::autocompleteDG[]
-=== Autocomplete
-
-The autocomplete feature serves to enhance user experience in using the Command Line Interface (CLI). It currently supports command words, options, prefixes, and parameters such as tags, contact's NRIC, pet patient's name, breed, species, colour and blood type.
-
-==== Current Implementation
-
-The implementation logic of the autocomplete feature resides in the `UI` component. The autocomplete feature is driven by a `ChangeListener` attached to `commandTextField.textProperty()` in `CommandBox.java`. Once the `ChangeListener` registers any changes in the content of `commandTextField`, `triggerAutocomplete()` will be executed. +
-
-Suppose that the user is launching Medeina. Before the Graphical User Interface (GUI) is ready, a `CommandBox` object will be initialized for the user to enter commands. The following diagram illustrates a sequence of method calls, starting with the initialization of `CommandBox`, followed by the initialization of an instance of `Autocomplete`, and then calling 3 set attribute methods in the `Logic` component. Subsequently, suppose the user has typed `add -p n/Happy s/Cat b/Persian c/Calico bt/A -o nr/`. The diagram shows a sequence of method calls, starting with triggerAutocomplete(), to get autocomplete suggestions for NRIC to be shown in a context menu.
-
-.Sequence diagram for autocomplete feature
-image::autocompleteSequenceDiagram.png[width="800"]
-
-{empty} +
-`Autocomplete.java` encompasses the logic for parsing user input in the CLI and determining what autocomplete suggestions are to be passed back to `CommandBox.java`. Data required for autocomplete, such as a list of command words, prefixes, options and parameters in Medeina, are retrieved from the `Logic` component. All data required by `Autocomplete` are consolidated in a similar way in the `Logic` component.
-
-The following code shows how contact's NRIC and tags are consolidated:
-[source,java]
-----
-public void setAttributesForPersonObjects() {
-    nricInModel = new HashSet<>();
-    personTagsInModel = new HashSet<>();
-
-    for (Person p : model.getAddressBook().getPersonList()) {
-        nricInModel.add(p.getNric().toString());
-        personTagsInModel.addAll(p.getTags());
-    }
-}
-
-public Set<String> getAllNric() {
-    return nricInModel;
-}
-
-public Set<String> getAllPersonTags() {
-    Set<String> personTags = personTagsInModel.stream()
-            .map(pt -> pt.tagName)
-            .collect(Collectors.toSet());
-    return personTags;
-}
-----
-
-You may have noticed that in sequence diagram above (Figure 11), `Autocomplete` is a singleton class that is initialized only once, and there is only 1 instance of `CommandBox` in the application. You may be wondering "can the 3 set attribute methods in the `Logic` component be called only once?". If you are currently unsure, imagine that the user is constantly adding new contacts to Medeina. However, `Autocomplete` uses only data from when Medeina was launched. +
-
-The answer to the question is definitely no. The set attributes methods have to be called whenever there is a change in Medeina's data, otherwise the autocomplete suggestions will not be up to date.
-
-The following code snippet ensures that the data used by `Autocomplete` is kept updated.
-[source,java]
-----
-public void handleAddressBookChangedEvent(AddressBookChangedEvent a) {
-    init(this.logic); // calls the 3 set attributes methods
-    logger.info(LogsCenter.getEventHandlingLogMessage(a, "Local data has changed, update autocomplete data"));
-}
-----
-
-==== Design considerations
-
-===== Aspect: Updating autocomplete data
-
-* **Alternative 1 (current choice):** All Data is updated only when `AddressBookChangedEvent` is raised.
-** Pros: Efficient and with minimal redundant updates.
-** Cons: Implementation is less straight-forward.
-* **Alternative 2 :** Updates the specific required data e.g. NRIC, whenever autocomplete is triggered.
-** Pros: Easy to implement.
-** Cons: Redundant updates. Required data will remain the same, except only when add, delete, or edit commands are executed.
-* **Alternative 3:** All Data is updated whenever autocomplete is triggered.
-** Pros: Easy to implement.
-** Cons: Many redundant data updates. Running for-loops in the `Logic` component for every character the user types, is resource-intensive.
-
-===== Aspect: Event-driven or user-driven
-
-* **Alternative 1 (current choice):** Implement change listener to automatically track user input and provide autocomplete suggestions.
-** Pros: Great improvement in user experience, as Medeina has long and complex command syntax.
-** Cons: Logic for handling caret position and command syntax parsing is complicated and can be prone to bugs.
-* **Alternative 2:** User has to press a specific key e.g. tab to invoke autocompletion.
-** Pros: Less logic to account for, and is thus easier to implement.
-** Cons: User experience is compromised.
-
-// end::autocompleteDG[]
-
-// tag::addcommandDG[]
-=== Add Command
-
-==== Current Implementation
-
-==== Design considerations
-
-===== Aspect: Consolidating similar commands
-
-* Combining variations of the same type of command into a single command with parsing options
-** **add Person** : add **-o** n/NAME p/PHONE NUMBER e/EMAIL a/ADDRESS nr/NRIC [t/TAGS]...
-** **add Pet Patient** : add **-p** n/NAME s/SPECIES b/BREED c/COLOUR bt/BLOOD TYPE [t/TAGS]... **-o** [WHO IS THE OWNER]
-** **add Appointment** : add **-a** d/DATE r/REMARK [t/TAGS]... **-o** [OWNER] -p [PET PATIENT INVOLVED]
-** add **-o** [OWNER INFO] **-p** [PET INFO] **-a** [APPOINTMENT INFO]
-
-Keeping to one main command is simpler and more user-friendly as compared to having variations of the same type of command. To reduce the amount of typing required, command syntax should be kept as compact as possible. Instead of having separate `add` commands for each of the 3 classes, combine them into a one-liner command to reduce typing redundant information from dependencies.
-
-// end::addcommandDG[]
-
-// tag::addPetPatient[]
-=== Adding a Pet Patient
-
-==== Current Implementation
-Currently, adding of pet patients is achieved by `AddPetPatientCommand`. It allows the user to add the details of pet patients, and subsequently stores the details within the storage file.
-
-The implementation of `AddPetPatientCommand` is rather similar to that of `AddCommand`.
-
-[NOTE]
-`AddPetPatientCommand`, as well as `AddCommand`, extends `UndoableCommand`.
-----
-public class AddPetPatientCommand extends UndoableCommand {
-	// logic for AddPetPatientCommand
-}
-----
-This brings us to the next section on the design considerations of AddPetPatientCommand.
-
-==== Design Considerations
-
-===== Aspect: Implementation of AddPetPatientCommand
-
-* **Alternative 1 (current choice):** The command extends `UndoableCommand`
-** Pros: We can make use of the undo / redo function that was previously implemented. This also allows our users to correct any mistakes that they might have made while keying in the information of the pet patients.
-** Cons: Developers who join our team in the future may have trouble understanding the code base (since we have both `UndoableCommand` and `Command`).
-
-* **Alternative 2:** The command extends `Command` instead.
-** Pros: We simplify the code base by removing the use of `UndoableCommand`.
-** Cons: Users are unable to undo their mistakes. Instead, they will have to go through the hassle of editing / deleting pet patients to resolve the error on their part.
-
-==== Current Limitations
-As of now, the linking of pet patients to their respective owners (and also appointments) has not been implemented.
-
-The implementation of `PetPatient` tags (i.e. having a separate list of tags from `Person`) is currently ongoing; as such, there is no support for tagging of pet patients yet.
-
-==== Future Work
-Future work on this feature will address the current limitations that we have.
-
-Linking of pet patients to their respective owners and appointments will be implemented. Tagging of the pet patients will also be implemented, as this is crucial to the searching of medical history of pets for the user.
-
-// end::addPetPatient[]
-
-
-// tag::ListPets[]
-=== Display List of PetPatients
-==== Current Implemaentation
-Since Veterinarians and their assistants have the need to view the PetPatients as a list and see how many PetPatients belong to the same Owner. It is necessary to implement the PetPatient List feature.
-
-image::List_Command.PNG[width:650]
-
-==== Design Consideration
-* **Alternative 1:** Use tab function to switch between PetPatientList and PersonList
-
-** Pros: The UI will be neat to see, saves more space for calendar view
-** Cons: The user will not be able to see both PetPatient and Owners at the same time.
-
-* **ALternative 2:** Implement another Panel to display PetPatients.
-
-** Pros: User will be able to see both lists at the same time
-** Cons: Takes up more space, making it difficult to display appointments in the future.
-
-==== Current Limitations
-More command and features relating to PetPatient List are to be properly developed, the tags of PetPatients are not properly organised.
-
-==== Future Work
-Implement the corresponding Add, Delete, List commands for petPatients and decide on the tags to be used for petPatients.
-// end::ListPets[]
-
-// tag::calendar[]
-=== Show Appointments on calendar
-==== Current Implementation
-
-Since veterinarians and their assistants have the need to constantly check their schedule for upcoming appointments, a calender feature is required to show future appointments.
-
-Third party API `CalendarFX` is used as a Java calendar frame to show Appointments.
-
-image::Show_Appointment.PNG[width:650]
-
-
-==== Design Consideration
-* **Alternative 1:** Use `iCalendar` from Jfxtra library
-
-** Pros: Easy to implement, convenient to use. Can easily import from Jfxtra library.
-** Cons: UI styles are limited, the API is limited;
-
-* **Alternative 2 (current choice):** Implement CalendarFX API library.
-** Pros: Versatile APIs such as set style for each calendar, and much better looking UI than iCalendar.
-** Cons: Extra work required to integrate CalendarFX files into project, and may cause build problems if not implemented properly.
-
-==== Current Limitations
-
-There's a known issue in CalendarFx, when switch from a year with appointments inside to a year without, the CalendarFx will still color the same appointment data despite there's no entry on that date.
-
-Users and developers should know that this issue is embedded inside CalendarFx, and hopefully can be resolved in future versions of CalendarFx.
-
-==== Future Work
-We may be able to make enhancements to the Medeina's UI such as changing theme colour to match the UI colour of CalendarFX.
-// end::calendar[]
-
-// tag::find[]
-=== Finding a Contact or Pet Patient
-The find function allows users to look for contacts or pet patients.
-
-==== Current Implementation
-
-==== Design Consideration
-
-===== Aspect:
-* **Alternative 1:**
-** Pros:
-** Cons:
-
-* **Alternative 2 (current choice):**
-** Pros:
-** Cons:
-
-==== Current Limitations
-Users are unable to find appointment related elements as the `Appointment` listing function in the calendar is different from the listing function of the other classes of `Person` and `PetPatient`. As such, there is currently no implementation to find an appointment based on types or remarks, which may pose as inconvenience to veterinarians, should they want to search by a specific type of appointment or remark.
-
-==== Future Considerations
-In the future, Medeina might consider adding functions that allow for finding of appointments by types or remarks, as well as update the calendar accordingly with the results of the find command.
-
-//end::find[]
-
-// tag::listappt[]
-=== Listing Appointments of Different Views and Dates
-The command allows users to list appointments based on the date that they wish to see, and the results are displayed via the API of CalendarFX.
-
-==== Current Implementation
-After Medeina implemented CalendarFX, users are able to view appointments at a specified date by clicking on the Calendar. However, as Medeina is a CLI-based application, users should not be required to move their mouse. Instead, users should be able to jump to certain dates to check appointments using the command line only.
-
-.Day view of the Calendar obtained by the `listappt -d` command.
-image::ListAppointmentDayView.png[width="800"]
-
-
-The implemented CalendarFX API consists of 4 different views: Day, Week, Month and Year views. Users should be able to get a specific requested view of a date, month, or year they wish to see.
-
-The below diagram illustrates the interaction between the `UI`, `Logic` and `Events` components in the `ListAppointment` command.
-
-.Sequence diagram for interactions between the different components upon running the `listappt -y 2017` command.
-image::SDforListAppointment.png[width="800"]
-
-
-`ListAppointmentParser.java` handles and separates the request of users based on a regular expression that captures the matching groups of options `-d`, `-w`, `-m`, `-y`. The parser then checks the remaining user input, and parses it into `LocalDate`, `YearMonth` and `Year` classes. Should there be no remaining user input after the option, the current date is obtained as the field. A new `ListAppointmentCommand` is created with the type (1 for year, 2 for month, 3 for week, 4 for date) as well as the parsed class.
-
-In `execute()`, there is a switch that determines the type of command run based on the type obtained from the parser. The relevant functions to change the Calendar gets called based on the type, and an event gets called to handle the change. If an appointment is in the past, a check is done to determine whether there were appointments in the year of that requested date, so that users are not able to jump into years that should not have appointments (i.e. years before Medeina existed).
-
-[source, java]
-----
-private CommandResult getYearView() throws NoAppointmentInYearException {
-    if (year.isBefore(Year.now())) {
-        if (!checkPastAppointment(year.getValue())) {
-            throw new NoAppointmentInYearException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, MESSAGE_USAGE));
-        }
-    }
-
-    EventsCenter.getInstance().post(new ChangeYearViewRequestEvent(year));
-    return new CommandResult(String.format(MESSAGE_SUCCESS, "year"));
-}
-----
-
-An event is then called to handle change the view with the specified date. The handler resides in `CalendarWindow.java` to be able to switch the `calendarView` to the specified requested view.
-
-[source, java]
-----
-private void changeWeekView(LocalDate date) {
-    WeekFields weekFields = WeekFields.SUNDAY_START;
-    int week = date.get(weekFields.weekOfWeekBasedYear()) - 1;
-
-    if (week == 0 && date.getMonthValue() == 12) {
-        //wraparound
-        week = 52;
-        calendarView.showWeek(Year.of(date.getYear()), week);
-    } else if (week == 0 && date.getMonthValue() == 1) {
-        //wraparound
-        LocalDate dateOfFirstJan = LocalDate.of(date.getYear(), 1, 1);
-        if (dateOfFirstJan.getDayOfWeek().getValue() != 7) {
-            week = 52;
-            calendarView.showWeek(Year.of(date.getYear() - 1), week);
-        } else {
-            week = 53;
-            calendarView.showWeek(Year.of(date.getYear() - 1), week);
-        }
-    } else {
-        calendarView.showWeek(Year.of(date.getYear()), week);
-    }
-}
-----
-
-As the week view in calendarFX is different from the obtaining the week of year in the original Java API, there was a need to switch the week `value` obtained from `LocalDate` to fit the week `value` in the Calendar. Above illustrates the snippet of code used to convert from the `value` of the week obtained from `LocalDate` to fit the Calendar.
-
-Upon a successful listing, a `CommandResult(...)` class is called with a success message of the specified view.
-
-==== Design Consideration
-
-===== Aspect: Improving command usage
-* **Alternative 1:** Use a fixed `date` field.
-** Pros: Users only need to remember that a `date` in the format of YYYY-MM-DD is accepted for each `listappt` command.
-** Cons: Users have to type more than required, especially for Year and Month views.
-
-* **Alternative 2 (current choice):** Use a changing field: `Year` for Year view, `YearMonth` for Month view, `LocalDate` for Week and Day views.
-** Pros: Users do not need to type redundant information. A Year view will be in the format of YYYY while a Month view will be in the format of YYYY-MM or MM (with automatically allocated current year).
-** Cons: Users have to remember that Year view only accepts the year, while the Month view only accepts a year and month, or month. The Week and Day views will not accept just a year or year and month, but requires the specific date.
-
-===== Aspect: Improving user productivity
-* **Alternative 1 (current choice):** Implement functions that requires users to type to switch views instead of clicking
-** Pros: Users do not need to switch between using a mouse and a keyboard, which increases productivity for users accustomed to the CLI based nature of Medeina.
-** Cons: Need to implement functions that help will change views (`listappt` or `la` command).
-
-* **Alternative 2:** Use buttons and clicks to switch a calendar than to manually input a command
-** Pros: There will be no need to implement any functions pertaining to `ListAppointment`.
-** Cons: Defeats the purpose of a CLI-based application.
-//end::listappt[]
-
-// tag::delete[]
-=== Deletion and Force Deletion of Contact, Pet Patient and Appointment
-The delete function allows its users to get rid of obsolete information.
-
-==== Current Implementation
-Medeina has multiple important classes to handle: `Person`, `PetPatient` and `Appointment`. As Medeina caters to veterinarians, there is a need for the ability to remove the mentioned classes. For example, an `Appointment` can be deleted should a contact decide not to go for the appointment anymore, a `PetPatient` should be deleted if a pet patient dies, and a `Person` should be deleted if a contact decides to immigrate permanently.
-
-The below diagram illustrates the interaction between `Logic` and `Model` components during the deletion of a contact.
-
-.Interaction of `Logic` and `Model` Components through the `delete -o 1` command.
-image::DeletePersonDiagramForDelete.png[width="800"]
-
-`DeleteCommandParser.java` handles and separates the deletion based on a regular expression, that captures the matching groups of options `-o`, `-p`, `-a`, `-fp`, `-fo`. Subsequently, the parser gets the `Index` from user input to determine the element to delete. The parser then creates a new `DeleteCommand` with the type (1 for contact, 2 for pet patient, 3 for appointment, 4 for force contact, 5 for force pet patient), as well as the `Index`.
-
-In `execute()`, there is a switch that determines the type of command run based on the type obtained from the parser. The normal delete functions (types 1, 2, 3) subsequently calls the `Model` component to properly remove the element.
-
-[source,java]
-----
-private CommandResult deleteAppointment() {
-     //... code ...
-     requireNonNull(appointmentToDelete);
-     model.deleteAppointment(appointmentToDelete);
-     //... code ...
-     return new CommandResult(String.format(MESSAGE_DELETE_APPOINTMENT_SUCCESS, appointmentToDelete));
- }
-----
-However, for the force delete functions (types 4, 5), dependencies have to be removed before the element itself can be removed, as shown by the snippet of code from `DeleteCommand.java` below.
-
-[source,java]
-----
-private CommandResult deleteForcePerson() {
-    //... code ...
-
-    List<PetPatient> petPatientsDeleted = model.deletePetPatientDependencies(personToDelete);
-    List<Appointment> appointmentsDeleted = new ArrayList<>();
-    for (PetPatient pp : petPatientsDeleted) {
-        appointmentsDeleted.addAll(model.deleteAppointmentDependencies(pp));
-        deleteDependenciesList += "\n" + (String.format(MESSAGE_DELETE_PET_PATIENT_SUCCESS, pp));
-    }
-    for (Appointment appointment : appointmentsDeleted) {
-        deleteDependenciesList += "\n" + (String.format(MESSAGE_DELETE_APPOINTMENT_SUCCESS, appointment));
-    }
-    model.deletePerson(personToDelete);
-
-    //... code ...
-
-    return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS, personToDelete) + deleteDependenciesList);
-}
-----
-
-It can be noted that pet patient dependencies are deleted before appointment dependencies. This is because of the dependency "hierachy" between the different elements. A pet patient is uniquely tied to a contact based on `Nric`, while an appointment is uniquely tied to a pet patient based on `Nric` and `PetPatientName`. As a result, pet patients must first be deleted before determining which appointments are to be deleted.
-
-.Listing of relevant dependencies deleted upon a force deletion of a contact.
-image::DeleteDependenciesForForce.png[width="800"]
-
-For each dependency deleted, it is stored in `List<...>` so that the `CommandResult(...)` returns all deleted dependencies as well as the main, deleted element.
-
-==== Design Consideration
-
-===== Aspect: Improving user friendliness
-* **Alternative 1:** Use different commands for different delete functions.
-** Pros: It is easier to implement. The command can just take in an `Index` without any options before.
-** Cons: Hard on users as they will have to type a different command for every type of delete (i.e. `deleteperson`, `deletepetpatient` etc.).
-
-* **Alternative 2 (current choice):** Use one overseeing `delete` command.
-** Pros: Users do not need to go through the hassle of trying to remember every different command of delete.
-** Cons: Extra work to determine the type of deletion (i.e. `-a` for Appointment, `-p` for PetPatient etc.).
-
-===== Aspect: Ease of Use
-* **Alternative 1:** Have no force delete function.
-** Pros: There will be no need to implement functions to delete prior dependencies before a deletion is done. An exception can just be thrown if dependencies still exist.
-** Cons: Users will need to manually find and delete every dependency manually.
-
-* **Alternative 2 (current choice):** Have a force delete function that will delete all dependencies along with the element to be deleted.
-** Pros: Easier to use. Users do not need to manually find and delete all dependencies, it just gets deleted immediately if required.
-** Cons: Need to delete dependencies upon calling a force function. In addition, the dependencies deleted must be shown as well to inform users of all deleted elements.
-
-==== Current Limitations
-As of now, users are only capable of deleting an element based on its `Index` displayed in Medeina. This may pose as difficult for users if they want to delete an element based on the list displayed through the `list` command, especially if there is alot of data in Medeina.
-
-==== Future Considerations
-In the coming future, the `Delete` function can be altered such that it allows users to input other fields other than just `Index`, so that users do not need to get a list before deleting a particular element, especially if the user wants to delete an element that is not in the current listing (i.e. not on the listing after a `find` command).
-//end::delete[]
-
-// tag::delete[]
-=== Deletion and Force Deletion of Contact, Pet Patient and Appointment
-The delete function allows its users to get rid of obsolete information.
-
-==== Current Implementation
-Medeina has multiple important classes to handle: `Person`, `PetPatient` and `Appointment`. As Medeina caters to veterinarians, there is a need for the ability to remove the mentioned classes. For example, an `Appointment` can be deleted should a contact decide not to go for the appointment anymore, a `PetPatient` should be deleted if a pet patient dies, and a `Person` should be deleted if a contact decides to immigrate permanently.
-
-The below diagram illustrates the interaction between `Logic` and `Model` components during the deletion of a contact.
-
-.Interaction of `Logic` and `Model` Components through the `delete -o 1` command.
-image::DeletePersonDiagramForDelete.png[width="800"]
-
-`DeleteCommandParser.java` handles and separates the deletion based on a regular expression, that captures the matching groups of options `-o`, `-p`, `-a`, `-fp`, `-fo`. Subsequently, the parser gets the `Index` from user input to determine the element to delete. The parser then creates a new `DeleteCommand` with the type (1 for contact, 2 for pet patient, 3 for appointment, 4 for force contact, 5 for force pet patient), as well as the `Index`.
-
-In `execute()`, there is a switch that determines the type of command run based on the type obtained from the parser. The normal delete functions (types 1, 2, 3) subsequently calls the `Model` component to properly remove the element.
-
-[source,java]
-----
-private CommandResult deleteAppointment() {
-     //... code ...
-     requireNonNull(appointmentToDelete);
-     model.deleteAppointment(appointmentToDelete);
-     //... code ...
-     return new CommandResult(String.format(MESSAGE_DELETE_APPOINTMENT_SUCCESS, appointmentToDelete));
- }
-----
-However, for the force delete functions (types 4, 5), dependencies have to be removed before the element itself can be removed, as shown by the snippet of code from `DeleteCommand.java` below.
-
-[source,java]
-----
-private CommandResult deleteForcePerson() {
-    //... code ...
-
-    List<PetPatient> petPatientsDeleted = model.deletePetPatientDependencies(personToDelete);
-    List<Appointment> appointmentsDeleted = new ArrayList<>();
-    for (PetPatient pp : petPatientsDeleted) {
-        appointmentsDeleted.addAll(model.deleteAppointmentDependencies(pp));
-        deleteDependenciesList += "\n" + (String.format(MESSAGE_DELETE_PET_PATIENT_SUCCESS, pp));
-    }
-    for (Appointment appointment : appointmentsDeleted) {
-        deleteDependenciesList += "\n" + (String.format(MESSAGE_DELETE_APPOINTMENT_SUCCESS, appointment));
-    }
-    model.deletePerson(personToDelete);
-
-    //... code ...
-
-    return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS, personToDelete) + deleteDependenciesList);
-}
-----
-
-It can be noted that pet patient dependencies are deleted before appointment dependencies. This is because of the dependency "hierachy" between the different elements. A pet patient is uniquely tied to a contact based on `Nric`, while an appointment is uniquely tied to a pet patient based on `Nric` and `PetPatientName`. As a result, pet patients must first be deleted before determining which appointments are to be deleted.
-
-.Listing of relevant dependencies deleted upon a force deletion of a contact.
-image::DeleteDependenciesForForce.png[width="800"]
-
-For each dependency deleted, it is stored in `List<...>` so that the `CommandResult(...)` returns all deleted dependencies as well as the main, deleted element.
-
-==== Design Consideration
-
-===== Aspect: Improving user-friendliness
-* **Alternative 1:** Use different commands for different delete functions.
-** Pros: It is easier to implement. The command can just take in an `Index` without any options before.
-** Cons: Hard on users as they will have to type a different command for every type of delete (i.e. `deleteperson`, `deletepetpatient` etc.).
-
-* **Alternative 2 (current choice):** Use one overseeing `delete` command.
-** Pros: Users do not need to go through the hassle of trying to remember every different command of delete.
-** Cons: Extra work to determine the type of deletion (i.e. `-a` for Appointment, `-p` for PetPatient etc.).
-
-===== Aspect: Ease of Use
-* **Alternative 1:** Have no force delete function.
-** Pros: There will be no need to implement functions to delete prior dependencies before a deletion is done. An exception can just be thrown if dependencies still exist.
-** Cons: Users will need to manually find and delete every dependency manually.
-
-* **Alternative 2 (current choice):** Have a force delete function that will delete all dependencies along with the element to be deleted.
-** Pros: Easier to use. Users do not need to manually find and delete all dependencies, it just gets deleted immediately if required.
-** Cons: Need to delete dependencies upon calling a force function. In addition, the dependencies deleted must be shown as well to inform users of all deleted elements.
-
-==== Current Limitations
-As of now, users are only capable of deleting an element based on its `Index` displayed in Medeina. This may pose as difficult for users if they want to delete an element based on the list displayed through the `list` command, especially if there is alot of data in Medeina.
-
-==== Future Considerations
-In the coming future, the `Delete` function can be altered such that it allows users to input other fields other than just `Index`, so that users do not need to get a list before deleting a particular element, especially if the user wants to delete an element that is not in the current listing (i.e. not on the listing after a `find` command).
-//end::delete[]
 
 // tag::dataencryption[]
 === [Proposed] Data Encryption
@@ -1299,27 +1677,31 @@ See this https://github.com/se-edu/addressbook-level4/pull/599[PR] for the step-
 |Name |Major enhancement(s) |Minor enhancement(s)
 |Jacqueline Cheong
 a|
-* *Autocomplete*
+*Autocomplete*
 
 To enhance user experience and usage efficiency of the CLI by providing autocomplete suggestions
 
-* *Add command*
+*Add command*
 
 A single add command with options to add a contact, pet patient and appointment to Medeina. Users don't have to remember multiple commands performing similar functions. The new add command also enables the user to all 3 objects at one go to reduce typing.
 
 a|
-* *Add support to change theme (persistent beyond app restart)*
+*Add support to change theme (persistent beyond app restart)*
 
 This allows Vets to change the application's appearance to better suit their preferences and working environment (e.g. dark theme for night time)
 
 |Chia Le Jing|
-*PetPatient class and all its relevant features*
+*Implement edit command*
 
-Commands such as add, edit, delete, find. Also includes the storage of pet patient's data into the associated .xml file. |
+Supports the editing of Person, PetPatient and Appointment objects. Also resolve all dependencies between all these objects as required. |
 
-*Implement backup function for local databases and the cloud (for v2.0)*
+*Implement Pet Patient and all its relevant classes*
 
-Allows local files to be backed up with the latest copy (in case of corruption of data). Also allows data to be backed up to the cloud for future use.
+Crucial for the backbone of the entire application, as all the key commands (add, edit, delete and find) makes use of PetPatients objects.
+
+*Implement storage of PetPatient objects*
+
+Essential for the proper storage and retrieval of PetPatient objects.
 
 |Wynona Kaan |
 *Find by Contact or Pet Patient*
@@ -1616,7 +1998,6 @@ These instructions only provide a starting point for testers to work on; testers
 === Autocomplete
 
 . Command word
-
 .. In an empty command box (with no user input), type a space. You should see a drop down list of commands supported by Medeina.
 .. Continue typing spaces in the command box. The same drop down list of command words will be suggested.
 
@@ -1629,7 +2010,6 @@ These instructions only provide a starting point for testers to work on; testers
 .. There will be no prefixes suggested for all other preceeding words e.g. "sdfkljsdlkfjs ", "help ".
 
 . Options
-
 .. Type "add -" you should see a list of options (starting with "-") supported by Medeina.
 .. Type "edit -" you should see a list of options (starting with "-") supported by Medeina.
 .. Type "find -" you should see a list of options (starting with "-") supported by Medeina.
@@ -1638,16 +2018,13 @@ These instructions only provide a starting point for testers to work on; testers
 .. There will be no options suggested for all other preceeding words e.g. "sdfkljsdlkfjs -", "help -".
 
 . Species, breed, colour and blood type
-
-.. Typing s/, b/, c/ and bt/ after a word (and a space) in the command box, will show their respective suggestions.
+.. Typing s/, b/, c/ and bt/ after any of the following command words (add, find, edit, delete, listappt) in the command box, will show their respective suggestions (cap at 13).
 
 . Pet patient names
-
 .. Type "add -a -o -p n/" and you will see a list of pet patient name suggestions (cap at 13).
 .. Type "add -p n/" and there will be no pet patient name suggestions.
 
 . NRIC
-
 .. Type "add -p -o nr/" and you will see a list of NRIC suggestions (cap at 13).
 .. Type "add -p n/Mikey s/Cat b/Persian c/Calico bt/A -o nr/" and you will see a list of NRIC suggestions (cap at 13).
 .. Type "add -p n/Mikey s/Cat b/Persian c/Calico bt/A -o nr/T" and you will see a list of NRIC suggestions starting with "T" (cap at 13).
@@ -1656,24 +2033,99 @@ These instructions only provide a starting point for testers to work on; testers
 .. Type "find -o nr/" to see a list of NRIC suggestions (cap at 13).
 
 . Toggle on/off
-
 .. Press F2 when the command box is in focus to off/on autocomplete.
 
 === Adding contact, pet patient, appointment
+. To add a person
+.. add -o n/Jason p/90123456 e/jason@gmail.com a/137 omputing Drive nr/S8899111G
+   Expected: Successfully added.
+   Enter this command again and you will see an error message "This contact already exists in Medeina."
+
+. To add a pet patient
+.. add -p n/Xiao bai s/Cat b/Persian c/Black bt/A -o
+   Expected: Please check your parameters for: option -o
+   Missing prefix nr/ for NRIC.
+
+.. add -p n/Xiao bai s/Cat b/Persian c/Black bt/A -o nr/S0123456B
+   Expected: Successfully added.
+
+. To add an appointment
+.. add -a d/2018-10-22 r/nil t/checkup -o nr/S012345B -p n/Ane
+   Expected: succesfully added
+
+=== Finding contacts or pet patients
+. Finding contacts
+
+.. Prerequisites: List all contacts and pet patients using the `list` command. Multiple contacts in the list.
+.. Test case: `find -o n/Alex Yeoh` +
+   Expected: All contacts with `Alex` or `Yeoh` in their names are listed, pet patients of contacts listed are also listed.
+.. Test case: `find -o t/Owner` +
+   Expected: All contacts with an `Owner` tag are listed, pet patients of contacts listed are also listed.
+.. Test case: `find -o n/Alex Yeoh t/Owner` +
+   Expected: All contacts with `Alex` or `Yeoh` in their names **and** have an `Owner` tag are listed, pet patients of contacts listed are also listed.
+.. Incorrect find commands: `find yay`, `find` +
+   Expected: Listing does not change. Error details shown in the status message.
+
+. Finding pet patients
+
+.. Prerequisites: List all contacts and pet patients using the `list` command. Multiple pet patients in the list.
+.. Test case: `find -p n/Ane` +
+   Expected: All pet patients with `Ane` in their names are listed, contacts who are owners of listed pet patients are also listed.
+.. Test case: `find -p s/Cat c/Black` +
+   Expected: All `Cat` pet patients who are `Black` in colour are listed, contacts who are owners of listed pet patients are also listed.
+.. Incorrect find commands not following the command syntax: `find`, `find yay` +
+   Expected: Listing does not change. Error details shown in the status message.
+
+=== Listing appointments
+. Switching views in the Calendar
+
+.. Prerequisites: There are appointments in the Calendar in the year 2018, there are no appointments in the Calendar in the year 2000.
+.. Test case: `listappt -y` +
+   Expected: The calendar is changed from current view to year view of the current year.
+.. Test case: `listappt -m 2018-01` +
+   Expected: The calendar is changed from current view to month view of January in 2018.
+.. Test case: `listappt -d 2018-12-31` +
+   Expected: The calendar is changed from current view to day view of 31st December 2018.
+.. Test case: `listappt -y 2000` +
+   Expected: The calendar is not changed. Error details shown in the status message.
+.. Other incorrect listappt commands not following the command syntax: `listappt`, `listappt -y 2018-12-31` etc. +
+   Expected: Similar to previous.
 
 === Deleting a person
 
-. Deleting a person while all persons are listed
+. Forcefully deleting a contact while all contacts are listed
 
-.. Prerequisites: List all persons using the `list` command. Multiple persons in the list.
-.. Test case: `delete 1` +
-   Expected: First contact is deleted from the list. Details of the deleted contact shown in the status message. Timestamp in the status bar is updated.
-.. Test case: `delete 0` +
-   Expected: No person is deleted. Error details shown in the status message. Status bar remains the same.
-.. Other incorrect delete commands to try: `delete`, `delete x` (where x is larger than the list size) _{give more}_ +
+.. Prerequisites: List all contacts using the `list` command. Multiple contacts in the list.
+.. Test case: `delete -fo 1` +
+   Expected: First contact is deleted from the list. Details of the deleted contact and its deleted dependencies is shown in the status message.
+.. Test case: `delete -fo 0` +
+   Expected: No contact is deleted. Error details shown in the status message.
+.. Other incorrect delete commands not following the command syntax: `delete`, `delete yay` etc. +
    Expected: Similar to previous.
 
-_{ more test cases ... }_
+. Deleting a contact with pet patients
+
+.. Prerequisites: The current listing is not empty. The contact at index `1` should have pet patients tied to it.
+.. Test case: `delete -o 1` +
+   Expected: No contacts deleted. Error details shown in the status message.
+
+. Deleting a pet patient with appointments
+
+.. Prerequisites: The current listing is not empty. The pet patient at index `1` should have appointments tied to it.
+.. Test case: `delete -p 1` +
+   Expected: No pet patients deleted. Error details shown in the status message.
+
+. Forcefully deleting a pet patient while all pet patients are listed
+
+.. Prerequisites: List all pet patients using the `list` command. Multiple pet patients in the list.
+.. Test case: `delete -fp 1` +
+   Expected: First pet patient is deleted from the list. Details of the deleted pet patient and its deleted dependencies shown in the status message.
+
+. Deleting an appointment
+
+.. Prerequisites: There is an appointment at index `1`.
+.. Test case: `delete -a 1` +
+   Expected: The appointment at index `1` is deleted from the Calendar. Details of the deleted appointment shown in the status message.
 
 === Listing owners and petPatients
 . Listing out all owners and petPatients
@@ -1682,11 +2134,3 @@ _{ more test cases ... }_
 .. Testcase: `find -o n/Alex` + `list` +
     Expected: Medeina will display the located person and then list out all owners and petPatients in Medeina's storage.
 
-
-=== Saving data
-
-. Dealing with missing/corrupted data files
-
-.. _{explain how to simulate a missing/corrupted file and the expected behavior}_
-
-_{ more test cases ... }_

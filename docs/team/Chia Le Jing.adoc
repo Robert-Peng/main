@@ -8,17 +8,15 @@
 
 == Overview
 
-Medeina is a desktop application primarily designed for veterinarians and their assistants (henceforth referred to as user/s) to better manage their contacts, pet patient and appointments details. The main bulk of interactions that the user will have with Medeina is through the Command Line Interface (CLI). However, it also has a Graphical User Interface (GUI) created with JavaFX so that users can visualise the data easily. Medeina is written in Java, and has about 20 kLoC.
+Medeina is a desktop application, designed for veterinarians and their assistants to better manage their contacts, pet patient and appointments details. Users interact with Medeina mainly through the Command Line Interface (CLI). A Graphical User Interface (GUI) created with JavaFX is also provided so that users can visualise the data easily. Medeina is written in Java, and has about 20 kLoC.
 
 == Summary of contributions
 
 * *Major enhancement*: Implemented `edit` command
 ** What it does: Allows the user to edit contacts, pet patients and appointments in Medeina. Relevant dependencies are also resolved as well. For example, if the user wishes to edit the name of a pet patient, the pet patient's name entry under the owner and also its relevant list of appointments will be updated to reflect the new name.
 ** Justification: Editing the details of contacts, pet patients and appointments is critical to the workflow of our users. This is because certain details might have been keyed in wrongly at the time of entry, and our users will want to modify these details to ensure the accuracy of their data in Medeina. The resolution of dependencies is also vital to the operation of Medeina, as it gives users the freedom to edit contacts, pet patients and appointments as they require without upsetting the relations between these objects.
-** Highlights: some highlight
 
-
-* *Minor enhancement*: Wrote PetPatient and all its relevant classes (PetPatientName, Species, Breed, Colour and BloodType). This enhancement is critical to the operation of Medeina, as most commands make use of PetPatient objects.
+* *Minor enhancement*: Wrote PetPatient and all its relevant classes (PetPatientName, Species, Breed, Colour and BloodType). Also implemented relevant storage functions for PetPatient objects.
 
 * *Code contributed*: [https://github.com/CS2103JAN2018-F14-B2/main/blob/master/collated/functional/chialejing.md[Functional code]] [https://github.com/CS2103JAN2018-F14-B2/main/blob/master/collated/test/chialejing.md[Test code]]
 
@@ -27,25 +25,20 @@ Medeina is a desktop application primarily designed for veterinarians and their 
 ** Project management:
 *** Managed release `v1.5rc` (1 release) on GitHub
 ** Enhancements to existing features:
-*** Some enhancement
+*** Sourced for new application icon and updated Medeina accordingly: https://github.com/CS2103JAN2018-F14-B2/main/pull/86[#86]
 ** Documentation:
-*** Did cosmetic tweaks to existing contents of the User Guide: https://github.com/CS2103JAN2018-F14-B2/main/blob/master/docs/UserGuide.adoc[UG]
+*** Ensured that important and warning icons are reflected properly in the User Guide: https://github.com/CS2103JAN2018-F14-B2/main/pull/162[#162]
+*** Authored the Command Summary section to make User Guide more user friendly: https://github.com/CS2103JAN2018-F14-B2/main/pull/152[#152]
 ** Community:
-*** PRs reviewed (with non-trivial review comments): https://github.com[#12], https://github.com[#32], https://github.com[#19], https://github.com[#42]
-*** Reported bugs and suggestions for other teams in the class (Examples:  https://github.com/CS2103JAN2018-T09-B3/main/issues/192[1], https://github.com/CS2103JAN2018-T09-B3/main/issues/193[2], https://github.com/CS2103JAN2018-T09-B3/main/issues/180[3],
-https://github.com/CS2103JAN2018-T09-B3/main/issues/185[4],
-https://github.com/CS2103JAN2018-T09-B3/main/issues/190[5])
+*** Reported bugs and suggestions for other teams in the class (Examples:  https://github.com/CS2103JAN2018-T09-B3/main/issues/193[1], https://github.com/CS2103JAN2018-T09-B3/main/issues/180[2])
 
 == Contributions to the User Guide
-
 
 |===
 |_Given below are sections I contributed to the User Guide. They showcase my ability to write documentation targeting end-users._
 |===
 
 include::../UserGuide.adoc[tag=editcommandUG]
-
-include::../UserGuide.adoc[tag=commandsummaryUG]
 
 == Contributions to the Developer Guide
 

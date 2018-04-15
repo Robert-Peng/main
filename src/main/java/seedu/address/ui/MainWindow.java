@@ -127,6 +127,7 @@ public class MainWindow extends UiPart<Stage> {
      */
     void fillInnerParts() {
         //browserPanel = new BrowserPanel();
+        //@@author Robert-Peng
         calendarWindow = new CalendarWindow(logic.getFilteredAppointmentList());
         this.calendarPlaceholder.getChildren().add(calendarWindow.getRoot());
 
@@ -135,7 +136,7 @@ public class MainWindow extends UiPart<Stage> {
 
         petPatientListPanel = new PetPatientListPanel(logic.getFilteredPetPatientList());
         petPatientListPanelPlaceholder.getChildren().add(petPatientListPanel.getRoot());
-
+        //@@author
         ResultDisplay resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
 

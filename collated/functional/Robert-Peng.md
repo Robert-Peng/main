@@ -1,4 +1,28 @@
 # Robert-Peng
+###### \java\seedu\address\logic\commands\ListCommand.java
+``` java
+import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PERSONS;
+import static seedu.address.model.Model.PREDICATE_SHOW_ALL_PET_PATIENTS;
+
+/**
+ * Lists all persons and petpatients in Medeina to the user.
+ */
+public class ListCommand extends Command {
+
+    public static final String COMMAND_WORD = "list";
+    public static final String COMMAND_ALIAS = "ls";
+
+    public static final String MESSAGE_SUCCESS = "Listed all contacts and pet patients";
+
+
+    @Override
+    public CommandResult execute() {
+        model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        model.updateFilteredPetPatientList(PREDICATE_SHOW_ALL_PET_PATIENTS);
+        return new CommandResult(MESSAGE_SUCCESS);
+    }
+}
+```
 ###### \java\seedu\address\logic\parser\ParserUtil.java
 ``` java
     /**
@@ -62,7 +86,7 @@ import seedu.address.commons.exceptions.IllegalValueException;
 public class ConcurrentAppointmentException extends IllegalValueException {
 
     public ConcurrentAppointmentException () {
-        super("AddressBook should not add appointments to on-going appointment slots");
+        super("Medeina should not add appointments to on-going appointment slots");
     }
 
 }
@@ -79,7 +103,7 @@ import seedu.address.commons.exceptions.IllegalValueException;
 public class PastAppointmentException extends IllegalValueException {
 
     public PastAppointmentException() {
-        super("AddressBook should not add appointments with past DateTime");
+        super("Medeina should not add appointments with past DateTime");
     }
 }
 
@@ -91,7 +115,7 @@ public class PastAppointmentException extends IllegalValueException {
  * Guarantees: immutable; is valid as declared in {@link #isValidNRIC(String)}
  */
 public class Nric {
-    public static final String MESSAGE_NRIC_CONSTRAINTS = "Person NRIC should be of the format #0000000@ "
+    public static final String MESSAGE_NRIC_CONSTRAINTS = "Contact NRIC should be of the format #0000000@ "
         + "where # is a letter that can be S T F or G,\n"
         + "0000000 represents 7 digits which can be any number from 0-9,\n"
         + "@ can be any alphabet A-Z.\n"
@@ -238,7 +262,7 @@ public class CalendarWindow extends UiPart<Region> {
         builder.append(appointmentCounter)
             .append(". ")
             .append(appointment.getPetPatientName().toString() + "\n")
-            .append("Owner Nric: " + appointment.getOwnerNric() + "\n")
+            .append("Contact Nric: " + appointment.getOwnerNric() + "\n")
             .append("Appointment type: " + appointment.getTagString());
 
         builder.append("\n");
@@ -290,6 +314,17 @@ public class CalendarWindow extends UiPart<Region> {
 
     }
 
+```
+###### \java\seedu\address\ui\MainWindow.java
+``` java
+        calendarWindow = new CalendarWindow(logic.getFilteredAppointmentList());
+        this.calendarPlaceholder.getChildren().add(calendarWindow.getRoot());
+
+        personListPanel = new PersonListPanel(logic.getFilteredPersonList());
+        personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
+
+        petPatientListPanel = new PetPatientListPanel(logic.getFilteredPetPatientList());
+        petPatientListPanelPlaceholder.getChildren().add(petPatientListPanel.getRoot());
 ```
 ###### \java\seedu\address\ui\PersonCard.java
 ``` java
@@ -353,11 +388,11 @@ public class PetPatientCard extends UiPart<Region> {
         this.petPatient = petPatient;
         id.setText(displayedIndex + ". ");
         name.setText(petPatient.getName().toString());
-        species.setText(petPatient.getSpecies().toString());
-        breed.setText(petPatient.getBreed().toString());
-        colour.setText(petPatient.getColour().toString());
-        bloodType.setText(petPatient.getBloodType().toString());
-        ownerNric.setText(petPatient.getOwner().toString());
+        species.setText("Species:\t\t" + petPatient.getSpecies().toString());
+        breed.setText("Breed:\t\t" + petPatient.getBreed().toString());
+        colour.setText("Colour:\t\t" + petPatient.getColour().toString());
+        bloodType.setText("Blood Type:\t" + petPatient.getBloodType().toString());
+        ownerNric.setText("Owner NRIC:\t" + petPatient.getOwner().toString());
         createTags(petPatient);
     }
 
@@ -614,6 +649,43 @@ public class PetPatientListPanel extends UiPart<Region> {
     -fx-background-color: white;
 }
 
+```
+###### \resources\view\MainWindow.fxml
+``` fxml
+          <VBox fx:id="petPatientList" minWidth="340" prefWidth="340" SplitPane.resizableWithParent="false">
+            <padding>
+              <Insets top="10" right="10" bottom="10" left="10" />
+            </padding>
+            <StackPane fx:id="petPatientListPanelPlaceholder" VBox.vgrow="ALWAYS"/>
+          </VBox>
+
+          <StackPane fx:id="calendarPlaceholder" prefWidth="200" >
+            <padding>
+              <Insets top="10" right="10" bottom="10" left="10" />
+            </padding>
+          </StackPane>
+        </SplitPane>
+```
+###### \resources\view\PersonListPanel.fxml
+``` fxml
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+  <TabPane id="owner-pane" prefHeight="42.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="NEVER">
+  <tabs>
+    <Tab id="owner-Tab" text=" Contacts " >
+         <content>
+           <AnchorPane  minHeight="0.0" minWidth="0.0" prefHeight="170.0" prefWidth="200.0" />
+         </content>
+    </Tab>
+  </tabs>
+  </TabPane>
+  <ListView fx:id="personListView" VBox.vgrow="ALWAYS" />
+</VBox>
 ```
 ###### \resources\view\PetPatientListCard.fxml
 ``` fxml

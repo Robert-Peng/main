@@ -190,7 +190,7 @@ public class ParserUtil {
             df.setLenient(false);
             df.parse(dateTimeArray[0]);
         } catch (ParseException e) {
-            throw new IllegalValueException("Please give a valid date based on the format yyyy-MM-dd!");
+            throw new IllegalValueException("Please give a valid date and time based on the format yyyy-MM-dd HH:mm!");
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -198,8 +198,7 @@ public class ParserUtil {
         try {
             localDateTime = LocalDateTime.parse(dateTime, formatter);
         } catch (DateTimeParseException e) {
-            throw new IllegalValueException("Please ensure all fields are valid "
-                    + "and follow the format of yyyy-MM-dd HH:mm!");
+            throw new IllegalValueException("Please give a valid date and time based on the format yyyy-MM-dd HH:mm!");
         }
 
         return localDateTime;

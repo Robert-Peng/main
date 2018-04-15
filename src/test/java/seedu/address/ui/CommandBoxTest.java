@@ -222,19 +222,18 @@ public class CommandBoxTest extends GuiUnitTest {
 
     @Test
     public void commandBox_autocompleteOption() {
-        testAutocompleteForUserInput("delete ", -1, "-", 3, "delete -fa");
-        testAutocompleteForUserInput("delete ", -1, "-", 4, "delete -fo");
-        testAutocompleteForUserInput("delete ", -1, "-", 5, "delete -fp");
+        testAutocompleteForUserInput("delete ", -1, "-", 3, "delete -fo");
+        testAutocompleteForUserInput("delete ", -1, "-", 4, "delete -fp");
         testAutocompleteForUserInput("add ", -1, "-", 1, "add -a");
-        testAutocompleteForUserInput("find ", -1, "-", 7, "find -o");
-        testAutocompleteForUserInput("find ", -1, "-", 8, "find -p");
+        testAutocompleteForUserInput("find ", -1, "-", 6, "find -o");
+        testAutocompleteForUserInput("find ", -1, "-", 7, "find -p");
         testAutocompleteForUserInput("listappt ", -1, "-", 2,
                 "listappt -d");
-        testAutocompleteForUserInput("listappt ", -1, "-", 6,
+        testAutocompleteForUserInput("listappt ", -1, "-", 5,
                 "listappt -m");
-        testAutocompleteForUserInput("listappt ", -1, "-", 9,
+        testAutocompleteForUserInput("listappt ", -1, "-", 8,
                 "listappt -w");
-        testAutocompleteForUserInput("listappt ", -1, "-", 10,
+        testAutocompleteForUserInput("listappt ", -1, "-", 9,
                 "listappt -y");
     }
 

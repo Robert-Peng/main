@@ -52,7 +52,7 @@
             </padding>
             <StackPane fx:id="personListPanelPlaceholder" VBox.vgrow="ALWAYS"/>
           </VBox>
-          <!-- @author Robert-Peng -->
+          <!-- @@author Robert-Peng -->
           <VBox fx:id="petPatientList" minWidth="340" prefWidth="340" SplitPane.resizableWithParent="false">
             <padding>
               <Insets top="10" right="10" bottom="10" left="10" />

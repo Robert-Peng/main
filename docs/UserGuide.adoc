@@ -45,7 +45,7 @@ If you have already set up Medeina, head on to <<CLI>>. +
 If you are already familiar with Medeina's Command Line Interface (CLI), head on to <<Commands>>.
 
 {empty} +
-
+// tag::GUI[]
 == Quick Start
 
 To successsfully install and run Medeina, you need to:
@@ -60,9 +60,10 @@ You can download the latest version of Java link:https://java.com/en/download//[
 .  Copy the file to the folder you want to use as the home folder for Medeina.
 .  Double-click the file to start the app. You should see the GUI (Graphical User Interface) in a few seconds.
 +
+
 .Medeina's GUI
 image::Interface.png[width="1000"]
-
+// end::GUI[]
 {empty} +
 
 // tag::cliUG[]
@@ -92,7 +93,7 @@ a| * Medeina's syntax starts with a command word.
 a| * Aliases are short-forms that can be used to replace command words.
 
 .^a|Options
-| `**-o**`, `**-p**`, `**-a**`, `**-fo**`, `**-fp**`, `**-fa**`, `**-y**`
+| `**-o**`, `**-p**`, `**-a**`, `**-fo**`, `**-fp**`, `**-y**`
 a| * Options are used in `add`, `edit`, `find`, `delete` and `listappt` commands.
 * You can specify them to execute variants of a command. For example in figure 2, `**-p**` option denotes editing a pet patient.
 * If there are multiple options used in a command, the order must be preserved.
@@ -207,6 +208,7 @@ Options are in order. For example, the add command for pet patient will have an 
 ====
 
 image::add_examples.PNG[width="800"]
+// end::addcommandUG[]
 
 .**Copy & paste to try out the above examples**
 ----
@@ -220,7 +222,6 @@ add -a d/2018-05-27 14:30 r/had poor appetite the last 3 days t/vaccination t/ch
 add -o n/Jacqueline p/65123456 e/jacq@gmail.com a/96 Computing Drive, #02-03 nr/S1234567G -p n/jewel
  s/cat b/persian c/calico bt/AB -a d/2018-12-31 12:30 r/nil t/surgery t/sterilization
 ----
-// end::addcommandUG[]
 {empty} +
 
 // tag::listcommand[]
@@ -282,7 +283,7 @@ a| * At least one of the optional fields must be provided.
 image::edit_examples.PNG[width="800"]
 {empty} +
 
-.**Copy & paste to try out**
+.**Copy & paste to try out the above exmaples**
 ----
 edit -o 1 p/91234567 e/alexyeoh@anotherexample.com
 
@@ -309,18 +310,21 @@ You can use `find` or `f` to do the following :
 
 .^a|Contact
 | `find **-o** PREFIX/KEYWORD [MORE KEYWORDS] [MORE PREFIX/MORE KEYWORDS]`
-a| * Currently accepted individual `PREFIX` finding are `n/NAME`, `nr/NRIC`, `t/TAGS`.
+a| * Currently accepted individual `PREFIX` are `n/NAME`, `nr/NRIC`, `t/TAGS`.
 * The above `PREFIX` can be used in any combination to find more specific contacts.
 * Pets of displayed contacts will also be displayed.
+* The input in brackets are optional, and can be added if more specific information is required.
 
 .^| Pet patient
 | `find **-p** PREFIX/KEYWORD [MORE KEYWORDS] [MORE PREFIX/MORE KEYWORDS]`
-a| * Currently accepted individual `PREFIX` finding are `n/PET_NAME`, `s/SPECIES`, `b/BREED`, `c/COLOR`, `bt/BLOOD_TYPE`, `t/PET_TAGS`.
+a| * Currently accepted individual `PREFIX` are `n/PET_NAME`, `s/SPECIES`, `b/BREED`, `c/COLOR`, `bt/BLOOD_TYPE`, `t/PET_TAGS`.
 * The above `PREFIX` can be used in any combination to find more specific pet patients.
 * Contacts of displayed pets will also be displayed.
+* The input in brackets are optional, and can be added if more specific information is required.
 
 |=====
 {empty} +
+// end::find[]
 
 ****
 * The search is case insensitive. e.g `-o n/alex` will match `Alex`.
@@ -329,32 +333,28 @@ a| * Currently accepted individual `PREFIX` finding are `n/PET_NAME`, `s/SPECIES
 * Data matching at least one keyword within a prefix will be returned. e.g. `-o n/Alex Yu` will return `Alex Yeoh`, `Bernice Yu`.
 * Only data matching at least one keyword in all prefixes will be returned. e.g. `-o n/Alex Yu nr/S0123456B` will return `Alex Yeoh` with the nric `S0123456B`.
 ****
+
 {empty} +
 
 image::find_examples.PNG[width="800"]
 {empty} +
 
-.**Copy & paste to try out**
+.**Copy & paste to try out the above examples**
 ----
 find -o n/Alex Bernice Charlotte t/Owner
 
 find -o nr/S0123456B T0123456C t/Owner
 
-find -p n/Bei Nei s/Cat
-
 find -p s/Dog Cat bt/DEA 4
-
-find -p s/Dog c/White Golden
 
 find -p s/Dog b/Pug c/Golden Brown
 
-find -p s/Cat b/Maine Coon c/Black bt/AB t/Aggressive
+find -p s/Cat b/Maine Coon t/Aggressive
 
-find -p n/Chae s/Cat b/Russian Blue c/Grey bt/A t/Naive
+find -p n/Chae s/Cat bt/A
 ----
 
 {empty} +
-// end::find[]
 
 // tag::listappt[]
 === Listing appointments in a specified view requested: `listappt` or `la` `[Since v1.5rc]`
@@ -370,15 +370,15 @@ You can use `listappt` or `la` to do the following :
 .^a|Year
 | `listappt -y [YEAR]`
 a| * The command will list appointments based on the specified `YEAR` in the year view of CalendarFX in YYYY format.
-* The command can run without any `YEAR` keyword. This will switch the view to the year view of today's date.
-* The command will only run for past `YEAR` keywords if there exists an appointment that was made in that year.
+* The input in brackets `[YEAR]` is optional. The command runs without this input, and this will switch the view to the year view of today's date.
+* The command will only run for past `YEAR` keyword if there exists an appointment that was made in that year.
 
 .^| Month
 | `listappt -m [YEAR-MONTH/MONTH]`
 a| * The command will list appointments based on the specified `YEAR-MONTH` in the month view of CalendarFX in YYYY-MM format.
-* The command can run without any `MONTH` keyword. This will switch the view to the month view of today's date.
+* The input in brackets `[MONTH]` is optional. The command runs without this input, and this will switch the view to the month view of today's date.
 * The command can run with only the `MONTH` keyword without the `YEAR` keyword in MM format. This will list appointments of the current year with the specified `MONTH`.
-* The command will only run for past `YEAR-MONTH` keywords if there exists an appointment that was made in that year.
+* The command will only run for past `YEAR-MONTH` keyword if there exists an appointment that was made in that year.
 
 .^| Week
 | `listappt -w [DATE]`
@@ -392,23 +392,28 @@ a| * The command will list appointments based on the specified `DATE` in the day
 * The command can run without any `DATE` keyword. This will switch the view to the day view of today's date.
 * The command will only run for past `DATE` keywords if there exists an appointment that was made in that year.
 |=====
-
+// end::listappt[]
 {empty} +
 
-.**Copy & paste to try out**
+.**Copy & paste to try out the examples**
 ----
+To list appointments in 2018 in year view:
 listappt -y 2018
 
+To list appointments in January 2018 in month view:
 listappt -m 2018-01
 
+To list appointments of the current month in month view:
 listappt -m
 
+To list appointments in 31st December 2018 in week view:
 listappt -w 2018-12-31
 
+To list appointments in 1st January 2018 in day view:
 listappt -d 2018-01-01
 
 ----
-// end::listappt[]
+
 {empty} +
 
 // tag::delete[]
@@ -440,12 +445,13 @@ a| * The command will delete the appointment at the specified `INDEX` listed by 
 * The index refers to the index number shown in the latest appointment listing. The index *must be a positive integer* 1, 2, 3, etc ...
 
 |=====
+// end::delete[]
 {empty} +
 
 image::delete_examples.PNG[width="800"]
 {empty} +
 
-.**Copy & paste to try out**
+.**Copy & paste to try out the above examples**
 ----
 delete -a 1
 
@@ -453,19 +459,18 @@ delete -p 1
 
 delete -o 1
 
-delete -fp 1
-
 delete -fo 1
+
+delete -fp 1
 
 ----
 
 {empty} +
-// end::delete[]
+
 
 === Listing entered commands : `history` or `his`
 
-To list all the commands that you have entered in reverse chronological order. +
-The command format should be: `history` or `his`
+If you would like to check what commands have been performed on Medeina for verification purposes, enter `history` or `his` in the command box. +
 
 image::History_Command.PNG[width="800"]
 
@@ -589,7 +594,7 @@ image::Redo_Clear.PNG[width="500"]
 
 === Clearing all entries : `clear` or `cls`
 
-You can use `clear` or `cls` to delete all entries in Medeina. +
+If you want to delete all entries in Medeina, simply use the `clear` or `cls` command. +
 
 .Executed clear command
 image::After_Clear.PNG[width="500"]
@@ -668,7 +673,7 @@ You do not need to manually encrypt your data files.
 
 === Creating other user profiles `[coming in v2.0]`
 
-Coming v2.0, Medeina will have user accounts, so that veterinarians and their assistants can collaborate on the same computer, but at the same time keep their information private to themselves.
+User accounts will be implemented in Medeina, so that veterinarians and their assistants can collaborate on the same computer, but at the same time keep their information private to themselves. They can also customize Medeina to their own preferences.
 
 {empty} +
 
@@ -690,7 +695,7 @@ Information that vets should not change:
 
 === Supporting multiple users `[coming in v2.0]`
 
-Coming v2.0, Medeina can be used concurrently on different systems. The data will be synced over an internet connection. This allow Veterinarians and their assistants to access Medeina simultaneously in different rooms, making it easier to collaborate with others.
+Medeina will have support to run concurrently on different systems. The data will be synced over an internet connection. This allow veterinarians and their assistants to access Medeina simultaneously in different rooms, making it convenient to collaborate with one another.
 
 {empty} +
 
@@ -714,6 +719,8 @@ Coming v2.0, Medeina can be used concurrently on different systems. The data wil
 *Q*: What should I do if I find a bug? +
 *A*: We are very sorry about this. Please help us out by creating an issue in our GitHub link:{repoURL}/issues[here]. We will get back to you shortly!
 
+// tag::FAQ[]
+
 *Q*: There's no scroll-bar in calendar entry views, what happens when a have a long list of appointments on that week? +
 *A*: The calendar entry view is implemented by default without a scroll-bar, yet user can still scroll up and down using mouse wheel.
 
@@ -726,6 +733,11 @@ Coming v2.0, Medeina can be used concurrently on different systems. The data wil
 *Q*: When click on appointments, a pop over window appears to show details of appointments but its unmodifiable, why? +
 *A*: Because of Medeina's command line based property, modifying of appointments details using mouse is disabled. Instead, users should use `edit` command.
 
+*Q*: Suppose I want to make an appointment for a pet patient named "Happy". However, the contact that "Happy" is assigned under, has yet another pet patient that is named "Happy" as well. I end up making an appointment for the other "Happy" instead. What can I do?
+*A*: Medeina is developed with the assumption that no pet patients under the same contact will share a name. However, there is a solution for such rare cases. Edit one of the pet patients to a name with a slight variation e.g. "Happy dog" to include species in the name for differentiation, or "Happy 1" to indicate the older pet patient for differentiation.
+
+=======
+// end::FAQ[]
 {empty} +
 
 // tag::commandsummaryUG[]
